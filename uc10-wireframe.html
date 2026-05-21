@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC10 - 유사 상품 후기로 시장 니즈 발견</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #16a085; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #16a085; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #d4edda; border: 1px solid #5cb85c; border-radius: 4px; font-size: 12px; font-weight: 600; color: #1e7e34; }
+  .mode-badge { padding: 4px 10px; background: #d0f0eb; border: 1px solid #16a085; border-radius: 4px; font-size: 12px; font-weight: 600; color: #0e6b58; margin-left: 8px; }
+
+  .filter-bar { display: flex; gap: 12px; padding: 12px; background: #f0f0f0; border-radius: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter { padding: 6px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+  .filter.active { background: #d0f0eb; border-color: #16a085; color: #0e6b58; font-weight: 600; }
+
+  .product-info { padding: 12px 16px; background: #e0f5ef; border: 1px solid #b2e5d6; border-radius: 4px; margin-bottom: 16px; font-size: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.teal { background: #d0f0eb; border-color: #16a085; }
+  .kpi-label { font-size: 12px; color: #666; }
+  .kpi-value { font-size: 22px; font-weight: bold; margin: 4px 0; }
+  .kpi-value.teal { color: #0e6b58; }
+  .kpi-change { font-size: 12px; color: #888; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  .chart-title { font-size: 14px; color: #222; margin-bottom: 8px; font-weight: 700; }
+
+  /* 유사 상품 카드 */
+  .similar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .similar-card { padding: 12px; background: #fafbfd; border: 1px solid #e1e6ee; border-radius: 4px; font-size: 12px; }
+  .similar-card .name { font-weight: 600; margin-bottom: 4px; color: #333; }
+  .similar-card .meta { color: #888; font-size: 11px; }
+
+  /* 키워드 막대 차트 */
+  .keyword-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13px; }
+  .keyword-label { width: 130px; font-weight: 600; }
+  .keyword-bar-wrap { flex: 1; background: #f0f0f0; height: 22px; border-radius: 3px; overflow: hidden; }
+  .keyword-bar { height: 100%; border-radius: 3px; }
+  .keyword-bar.pos { background: #16a085; }
+  .keyword-bar.neg { background: #d9534f; }
+  .keyword-bar.pos.l2 { background: #20b29a; }
+  .keyword-bar.pos.l3 { background: #4cc3ac; }
+  .keyword-bar.pos.l4 { background: #7fd1bf; }
+  .keyword-bar.pos.l5 { background: #b2e5d6; }
+  .keyword-bar.neg.l2 { background: #e08a82; }
+  .keyword-bar.neg.l3 { background: #f0a070; }
+  .keyword-bar.neg.l4 { background: #f5c099; }
+  .keyword-bar.neg.l5 { background: #f8dabe; }
+  .keyword-count { width: 70px; text-align: right; font-weight: 600; }
+  .keyword-count.pos { color: #0e6b58; }
+  .keyword-count.neg { color: #d9534f; }
+
+  .insight-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .insight-card { padding: 18px; border-radius: 6px; }
+  .insight-card.pos { background: #e0f5ef; border-left: 4px solid #16a085; }
+  .insight-card.neg { background: #fdecea; border-left: 4px solid #d9534f; }
+  .insight-card h4 { margin: 0 0 10px; font-size: 15px; }
+  .insight-card.pos h4 { color: #0e6b58; }
+  .insight-card.neg h4 { color: #d9534f; }
+  .insight-card ul { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.7; }
+
+  .diagnosis-card { padding: 18px; background: #d0f0eb; border-left: 4px solid #16a085; margin-bottom: 16px; border-radius: 4px; }
+  .diagnosis-card h3 { margin: 0 0 8px; font-size: 18px; color: #0e6b58; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #d0f0eb; border-left: 4px solid #16a085; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #e7e8ea; border-left: 4px solid #6c757d; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+  .efficiency-banner { background: #e0f5ef; border: 1px solid #b2e5d6; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #0e6b58; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 고객 반응 모니터링</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC10 :</b> 파트너는 유사 상품 후기의 칭찬·아쉬움 키워드로 시장이 원하는 것·개선 포인트를 발견할 수 있다.</div>
+  <div class="step-line"><b>Step 1</b> PO 인사이트 → <strong>"신상품 기획 모드"</strong> 진입 (시즌 신상품 기획 단계)</div>
+  <div class="step-line"><b>Step 2</b> 기획 카테고리 선택(미드웨이트 자켓) → <strong>자사 유사 상품 6개 자동 조회</strong></div>
+  <div class="step-line"><b>Step 3</b> 통합 후기 KPI 확인 → 총 후기 320개 · 평균 별점 4.1 · 부정 비중 18%</div>
+  <div class="step-line"><b>Step 4</b> 긍정 키워드 통합 분석 → <strong>"가볍다 52회·보온성 38회·포켓 26회·코디 편함 22회"</strong> (시장 니즈)</div>
+  <div class="step-line"><b>Step 5</b> 부정 키워드 통합 분석 → <strong>"사이즈 작다 45회·두께 애매 24회·안감 부족 18회·지퍼 12회"</strong> (개선 포인트)</div>
+  <div class="step-line"><b>Step 6</b> 진단: <strong>"가볍고 보온성 좋되, 사이즈 표기 정확·중간 두께·안감 보강 필요"</strong></div>
+  <div class="step-line"><b>Step 7</b> 다음 분석: 고객 프로파일 진단으로 이동 (타겟 고객 + 잠재 시장 분석)</div>
+</div>
+
+<div class="step-header">Step 1-7 · 신상품 기획 — 시장 니즈 발견</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>고객 반응 모니터링</b></div>
+    <div>
+      <span class="tier-badge">Basic 요금제</span>
+      <span class="mode-badge">🆕 신상품 기획 모드</span>
+    </div>
+  </div>
+
+  <div class="efficiency-banner">
+    💡 <strong>감각·경험에 의존하던 시장 니즈 파악을 데이터로</strong>. 기획 카테고리 선택 시 자사 유사 상품 후기가 자동 통합 분석됩니다.
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter">📅 분석 기간: 최근 1년 누적</div>
+    <div class="filter active">🎯 기획 카테고리: 미드웨이트 자켓 ▼</div>
+    <div class="filter">🔄 유사도 기준: 카테고리·가격대 매칭</div>
+  </div>
+
+  <h4>자동 조회된 유사 상품 6개</h4>
+  <div class="similar-grid">
+    <div class="similar-card"><div class="name">코튼 워시드 자켓 (BLK)</div><div class="meta">UID 1233101 · ₩119K · 후기 65개 · ★4.2</div></div>
+    <div class="similar-card"><div class="name">테크플리스 풀집 자켓</div><div class="meta">UID 1233102 · ₩135K · 후기 58개 · ★4.0</div></div>
+    <div class="similar-card"><div class="name">윈드브레이커 (네이비)</div><div class="meta">UID 1233103 · ₩99K · 후기 72개 · ★4.3</div></div>
+    <div class="similar-card"><div class="name">테일러드 싱글 자켓</div><div class="meta">UID 1233104 · ₩159K · 후기 41개 · ★3.9</div></div>
+    <div class="similar-card"><div class="name">라이트 패딩 자켓</div><div class="meta">UID 1233105 · ₩129K · 후기 50개 · ★4.1</div></div>
+    <div class="similar-card"><div class="name">캐주얼 블레이저</div><div class="meta">UID 1233106 · ₩145K · 후기 34개 · ★4.0</div></div>
+  </div>
+
+  <h4>통합 후기 KPI</h4>
+  <div class="kpis">
+    <div class="kpi teal"><div class="kpi-label">총 후기</div><div class="kpi-value teal">320</div><div class="kpi-change">6개 상품 1년 누적</div></div>
+    <div class="kpi teal"><div class="kpi-label">평균 별점</div><div class="kpi-value teal">★4.1</div><div class="kpi-change">긍정 베이스</div></div>
+    <div class="kpi"><div class="kpi-label">부정 리뷰 비중</div><div class="kpi-value">18%</div><div class="kpi-change">개선 여지 큰 영역</div></div>
+    <div class="kpi"><div class="kpi-label">분석 키워드</div><div class="kpi-value">142</div><div class="kpi-change">긍정 89 / 부정 53</div></div>
+  </div>
+
+  <h4 style="margin-top:24px;">🟢 시장 니즈 — 긍정 키워드 Top 5 (시장이 원하는 것)</h4>
+  <div class="chart-wrap">
+    <div class="keyword-row"><div class="keyword-label">가볍다</div><div class="keyword-bar-wrap"><div class="keyword-bar pos" style="width:100%;"></div></div><div class="keyword-count pos">52회</div></div>
+    <div class="keyword-row"><div class="keyword-label">보온성</div><div class="keyword-bar-wrap"><div class="keyword-bar pos l2" style="width:73%;"></div></div><div class="keyword-count pos">38회</div></div>
+    <div class="keyword-row"><div class="keyword-label">포켓 많음</div><div class="keyword-bar-wrap"><div class="keyword-bar pos l3" style="width:50%;"></div></div><div class="keyword-count pos">26회</div></div>
+    <div class="keyword-row"><div class="keyword-label">코디 편함</div><div class="keyword-bar-wrap"><div class="keyword-bar pos l4" style="width:42%;"></div></div><div class="keyword-count pos">22회</div></div>
+    <div class="keyword-row"><div class="keyword-label">실용성</div><div class="keyword-bar-wrap"><div class="keyword-bar pos l5" style="width:35%;"></div></div><div class="keyword-count pos">18회</div></div>
+  </div>
+
+  <h4>🔴 개선 포인트 — 부정 키워드 Top 5 (시장이 아쉬워하는 것)</h4>
+  <div class="chart-wrap">
+    <div class="keyword-row"><div class="keyword-label">사이즈 작다</div><div class="keyword-bar-wrap"><div class="keyword-bar neg" style="width:100%;"></div></div><div class="keyword-count neg">45회</div></div>
+    <div class="keyword-row"><div class="keyword-label">두께 애매</div><div class="keyword-bar-wrap"><div class="keyword-bar neg l2" style="width:53%;"></div></div><div class="keyword-count neg">24회</div></div>
+    <div class="keyword-row"><div class="keyword-label">안감 부족</div><div class="keyword-bar-wrap"><div class="keyword-bar neg l3" style="width:40%;"></div></div><div class="keyword-count neg">18회</div></div>
+    <div class="keyword-row"><div class="keyword-label">지퍼 약함</div><div class="keyword-bar-wrap"><div class="keyword-bar neg l4" style="width:27%;"></div></div><div class="keyword-count neg">12회</div></div>
+    <div class="keyword-row"><div class="keyword-label">세탁 후 변형</div><div class="keyword-bar-wrap"><div class="keyword-bar neg l5" style="width:18%;"></div></div><div class="keyword-count neg">8회</div></div>
+  </div>
+
+  <h4 style="margin-top:24px;">신상품 차별화 포인트 도출</h4>
+  <div class="insight-cards">
+    <div class="insight-card pos">
+      <h4>✅ 유지·강조해야 할 가치</h4>
+      <ul>
+        <li>경량성 (가볍다 키워드 압도적)</li>
+        <li>보온 성능 (시장이 원하는 핵심)</li>
+        <li>포켓·실용성 (구매 결정 요인)</li>
+        <li>다른 옷과 코디 편한 디자인</li>
+      </ul>
+    </div>
+    <div class="insight-card neg">
+      <h4>⚠️ 신상품에서 반드시 개선</h4>
+      <ul>
+        <li><b>사이즈 표기 재검토</b> (45회 — 1순위)</li>
+        <li>중간 두께 옵션 추가 (간절기 대응)</li>
+        <li>안감 보강 (계절 전환기)</li>
+        <li>지퍼 품질·내구성 검수</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 요약</h4>
+  <div class="diagnosis-card">
+    <h3>🔍 시장 니즈·개선 포인트 발견 완료</h3>
+    <b>26 F/W 미드웨이트 자켓 — 신상품 차별화 포인트</b><br>
+    <strong>"가볍고 보온성 좋되, 사이즈 표기 정확·중간 두께·안감 보강 + 지퍼 품질 강화"</strong><br>
+    <span style="font-size:12px; color:#666;">→ 다음 단계: 누구에게 팔지 (타겟 고객·잠재 시장) 분석</span>
+  </div>
+
+  <h4>🔗 다음 액션 검토 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 7)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary">
+      <b>📊 다음 분석: 고객 프로파일 진단</b>
+      누구를 타겟할지·잠재 시장 분석<br>(가격·사이즈·옵션 전략 수립)
+    </div>
+    <div class="action-card secondary">
+      <b>🎨 디자이너에 공유</b>
+      개선 포인트 리포트 자동 전달<br>(Slack/이메일)
+    </div>
+    <div class="action-card tertiary">
+      <b>📁 차별화 가이드 다운로드</b>
+      신상품 PRD에 첨부할<br>데이터 근거 자료
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

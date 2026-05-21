@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>DS#1 상품 성과 진단 — 와이어프레임</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #2c5cf5; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #d9534f; }
+  .narrative-top { display: none !important; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; display: none; }
+  .screen.active { display: block; }
+
+  /* Narrative 상단 박스 */
+  .narrative-top { background: #fff8e1; padding: 14px 18px; border-left: 4px solid #ffc107; margin-bottom: 20px; font-size: 13px; line-height: 1.7; border-radius: 4px; }
+  .narrative-top b { color: #2c5cf5; }
+  .narrative-top strong { color: #d9534f; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .back-link { color: #2c5cf5; cursor: pointer; text-decoration: none; margin-right: 8px; font-weight: 600; }
+  .back-link:hover { text-decoration: underline; }
+  .tier-badge { padding: 4px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+  .filter-bar { display: flex; gap: 12px; padding: 12px; background: #f0f0f0; border-radius: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter { padding: 6px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpis.three { grid-template-columns: repeat(3, 1fr); }
+  .kpi { padding: 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.highlight { background: #fff3cd; border-color: #ffc107; }
+  .kpi-label { font-size: 12px; color: #666; }
+  .kpi-value { font-size: 22px; font-weight: bold; margin: 4px 0; }
+  .kpi-value.bad { color: #d9534f; }
+  .kpi-change { font-size: 12px; }
+  .kpi-change.down { color: #d9534f; }
+  .kpi-change.up { color: #5cb85c; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  .chart-title { font-size: 13px; color: #444; margin-bottom: 8px; font-weight: 600; }
+  .chart-subhint { font-size: 12px; color: #888; margin-bottom: 8px; font-style: italic; }
+  .chart-legend { display: flex; gap: 16px; font-size: 12px; color: #555; margin-top: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-color { width: 16px; height: 3px; }
+
+  .category-tabs { display: flex; gap: 4px; margin: 24px 0 0; border-bottom: 2px solid #ddd; }
+  .cat-tab { padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 500; color: #666; border: none; background: none; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .cat-tab:hover { color: #2c5cf5; background: #f8f9ff; }
+  .cat-tab.active { color: #2c5cf5; border-bottom-color: #2c5cf5; font-weight: 700; }
+  .cat-tab.suggested { position: relative; }
+  .cat-tab.suggested::after { content: "🔥"; font-size: 11px; margin-left: 4px; }
+  .cat-hint { font-size: 12px; color: #d9534f; margin: 8px 0 0; padding: 6px 10px; background: #fdecea; border-radius: 4px; display: inline-block; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  tr.row-highlight { background: #fff3cd; cursor: pointer; }
+  tr.row-highlight:hover { background: #ffe79b; }
+  tr.row-highlight td { font-weight: 600; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: #f9f9f9; }
+  .drill-link { color: #2c5cf5; text-decoration: underline; font-weight: 600; }
+  .down-pct { color: #d9534f; }
+  .up-pct { color: #5cb85c; }
+
+  .product-info { padding: 12px 16px; background: #eef4fb; border: 1px solid #cfe2ff; border-radius: 4px; margin-bottom: 16px; font-size: 14px; }
+
+  .funnel-clickhint { font-size: 12px; background: #e7f3ff; color: #2c5cf5; padding: 6px 12px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+
+  /* Funnel group click style */
+  .funnel-group { cursor: pointer; transition: opacity 0.15s; }
+  .funnel-group:hover { opacity: 0.75; }
+  .funnel-group.active .stage-frame { stroke: #2c5cf5; stroke-width: 2; stroke-dasharray: 4,3; fill: rgba(44,92,245,0.05); }
+  .stage-frame { fill: none; }
+
+  .diagnosis-card { padding: 18px; background: #fdecea; border-left: 4px solid #d9534f; margin-bottom: 16px; border-radius: 4px; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #fff3cd; border-left: 4px solid #ffc107; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.locked { background: #f0f0f0; border-left: 4px solid #aaa; color: #777; cursor: not-allowed; }
+  .action-card:hover:not(.locked) { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+  .trend-chart { display: none; }
+  .trend-chart.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 상품 성과 진단</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC1 :</b> 파트너는 매출 부진의 원인이 노출부족인지, 전환 실패인지 진단 할 수 있다.</div>
+  <div class="step-line"><b>Step 1</b> 마케팅 매니저가 PO 인사이트에 진입 → KPI 카드에서 <strong>GMV -15%</strong> 신호 발견</div>
+  <div class="step-line"><b>Step 2</b> 카테고리별 GMV 추이로 <b>스포츠웨어</b>가 가장 큰 하락(빨강 라인) 확인</div>
+  <div class="step-line"><b>Step 3</b> <strong>스포츠웨어 탭 클릭</strong> → 카테고리 drill-down → 하락폭 1위 <strong>에센셜 트레이닝 자켓 (-45%)</strong> 식별 → 상품명 클릭하여 퍼널 진단으로 이동</div>
+  <div class="step-line"><b>Step 4</b> 에센셜 트레이닝 자켓 단독 페이지로 drill-through</div>
+  <div class="step-line"><b>Step 5</b> 퍼널을 보니 노출·클릭은 큰 변화 없는데, <strong>장바구니에서 전환율이 6% → 3% 반토막</strong> — 이상 신호 발견</div>
+  <div class="step-line"><b>Step 6</b> 퍼널에서 <strong>장바구니를 클릭</strong> → 일별 추이가 장바구니 전환율로 전환 → <strong>5/15부터 급락 시작</strong> 확인</div>
+  <div class="step-line"><b>Step 7</b> 진단: <strong>"노출 충분, 전환에서 막힘 → PDP·가격 문제"</strong></div>
+  <div class="step-line"><b>Step 8</b> 다음 액션 검토 (고객 반응 모니터링 / PDP 직접 점검)</div>
+</div>
+
+<!-- ============================== -->
+<!-- 화면 1 -->
+<!-- ============================== -->
+<div class="step-header" id="header-1">Step 1-3 · 상품 성과 진단 메인</div>
+<div id="screen-1" class="screen active">
+
+  <!-- narrative 상단 -->
+  <div class="narrative-top">
+    <b>Step 1</b> 마케팅 매니저가 PO 인사이트에 진입 → KPI 카드에서 <strong>GMV -15%</strong> 신호 발견<br>
+    <b>Step 2</b> 카테고리별 GMV 추이로 <b>스포츠웨어</b>가 가장 큰 하락(빨강 라인) 확인<br>
+    <b>Step 3</b> <strong>스포츠웨어 탭 클릭</strong> → 카테고리 drill-down → 하락폭 1위 <strong>에센셜 트레이닝 자켓 (-45%)</strong> 식별 → 상품명 클릭하여 퍼널 진단으로 이동
+  </div>
+
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>상품 성과 진단</b></div>
+    <div class="tier-badge">Standard 요금제</div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter">📅 기간: 2026.05.13 ~ 2026.05.19 (주간)</div>
+    <div class="filter">📦 카테고리: 전체 ▼</div>
+    <div class="filter">🔍 상품: ─</div>
+    <div class="filter">⚙️ 비교: 전주 대비 ▼</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">GMV</div><div class="kpi-value bad">₩142M</div><div class="kpi-change down">▼ -15% vs 전주</div></div>
+    <div class="kpi"><div class="kpi-label">판매수량</div><div class="kpi-value">3,210</div><div class="kpi-change down">▼ -12%</div></div>
+    <div class="kpi"><div class="kpi-label">ASP</div><div class="kpi-value">₩44,230</div><div class="kpi-change down">▼ -3%</div></div>
+    <div class="kpi"><div class="kpi-label">취소반품율</div><div class="kpi-value">8.2%</div><div class="kpi-change up">▲ +1.4%p</div></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">카테고리별 GMV 추이 (5/13~5/19)</div>
+    <svg width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0</text><text x="50" y="159" font-size="11" fill="#888" text-anchor="end">10M</text><text x="50" y="114" font-size="11" fill="#888" text-anchor="end">20M</text><text x="50" y="69" font-size="11" fill="#888" text-anchor="end">30M</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">40M</text>
+      <text x="100" y="220" font-size="11" fill="#666" text-anchor="middle">5/13</text><text x="200" y="220" font-size="11" fill="#666" text-anchor="middle">5/14</text><text x="300" y="220" font-size="11" fill="#666" text-anchor="middle">5/15</text><text x="400" y="220" font-size="11" fill="#666" text-anchor="middle">5/16</text><text x="500" y="220" font-size="11" fill="#666" text-anchor="middle">5/17</text><text x="600" y="220" font-size="11" fill="#666" text-anchor="middle">5/18</text><text x="700" y="220" font-size="11" fill="#666" text-anchor="middle">5/19</text>
+      <polyline points="100,65 200,83 300,88 400,92 500,110 600,128 700,146" stroke="#d9534f" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="65" r="4" fill="#d9534f"/><circle cx="200" cy="83" r="4" fill="#d9534f"/><circle cx="300" cy="88" r="4" fill="#d9534f"/><circle cx="400" cy="92" r="4" fill="#d9534f"/><circle cx="500" cy="110" r="4" fill="#d9534f"/><circle cx="600" cy="128" r="4" fill="#d9534f"/><circle cx="700" cy="146" r="4" fill="#d9534f"/>
+      <text x="710" y="146" font-size="11" fill="#d9534f" font-weight="bold">12M ▼</text>
+      <polyline points="100,88 200,86 300,88 400,86 500,88 600,86 700,86" stroke="#888" stroke-width="2" fill="none" stroke-dasharray="4,3"/><circle cx="700" cy="86" r="3" fill="#888"/>
+      <polyline points="100,101 200,99 300,101 400,99 500,99 600,101 700,99" stroke="#aaa" stroke-width="2" fill="none" stroke-dasharray="4,3"/><circle cx="700" cy="99" r="3" fill="#aaa"/>
+      <polyline points="100,118 200,114 300,118 400,114 500,114 600,118 700,118" stroke="#bbb" stroke-width="2" fill="none" stroke-dasharray="4,3"/><circle cx="700" cy="118" r="3" fill="#bbb"/>
+    </svg>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-color" style="background:#d9534f"></div> 스포츠웨어 (큰 하락)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#888"></div> 아우터</div>
+      <div class="legend-item"><div class="legend-color" style="background:#aaa"></div> 신발</div>
+      <div class="legend-item"><div class="legend-color" style="background:#bbb"></div> 액세서리</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">상품 순위</h4>
+  <div class="cat-hint">⚠️ 스포츠웨어 카테고리에서 큰 하락이 감지됨 → 해당 탭을 클릭해 상품별로 진단해보세요</div>
+  <div class="category-tabs">
+    <button class="cat-tab active" onclick="selectCategory('all', this)">전체</button>
+    <button class="cat-tab suggested" onclick="selectCategory('sportswear', this)">스포츠웨어</button>
+    <button class="cat-tab" onclick="selectCategory('outer', this)">아우터</button>
+    <button class="cat-tab" onclick="selectCategory('shoes', this)">신발</button>
+    <button class="cat-tab" onclick="selectCategory('accessory', this)">액세서리</button>
+  </div>
+  <table id="rank-table">
+    <thead><tr><th>순위</th><th>상품명</th><th>UID</th><th>카테고리</th><th>GMV</th><th>전주 대비</th><th>판매수량</th></tr></thead>
+    <tbody id="rank-body"></tbody>
+  </table>
+</div>
+
+<!-- ============================== -->
+<!-- 화면 2 -->
+<!-- ============================== -->
+<div class="step-header" id="header-2" style="display:none;">Step 4-8 · 상품 퍼널 진단 + 다음 액션</div>
+<div id="screen-2" class="screen">
+
+  <!-- narrative 상단 -->
+  <div class="narrative-top">
+    <b>Step 4</b> 에센셜 트레이닝 자켓 단독 페이지로 drill-through<br>
+    <b>Step 5</b> 퍼널을 보니 노출·클릭은 큰 변화 없는데, <strong>장바구니에서 전환율이 6% → 3% 반토막</strong> — 이상 신호 발견<br>
+    <b>Step 6</b> 퍼널에서 <strong>장바구니를 클릭</strong> → 일별 추이가 장바구니 전환율로 전환 → <strong>5/15부터 급락 시작</strong> 확인<br>
+    <b>Step 7</b> 진단: <strong>"노출 충분, 전환에서 막힘 → PDP·가격 문제"</strong><br>
+    <b>Step 8</b> 다음 액션 검토 (DS#3 고객 반응 모니터링 / PDP 직접 점검)
+  </div>
+
+  <div class="top-bar">
+    <div class="breadcrumb">
+      <span class="back-link" onclick="goBack()">← 뒤로</span>
+      파트너 오피스 &gt; 인사이트 &gt; 상품 성과 진단 &gt; 스포츠웨어 &gt; <b>에센셜 트레이닝 자켓 퍼널 진단</b>
+    </div>
+    <div class="tier-badge">Standard 요금제</div>
+  </div>
+
+  <div class="product-info">
+    <b>에센셜 트레이닝 자켓</b> · UID 1234567 · 스포츠웨어 &gt; 트레이닝 &gt; 자켓 · 판매중 · 후기 320개 · 평점 ★4.2 · 정가 ₩89,000
+  </div>
+
+  <h4>지난 7일 퍼널 (전주 vs 금주 비교)</h4>
+  <div class="funnel-clickhint">💡 단계 클릭 시 아래 일별 추이가 해당 지표로 전환됩니다</div>
+  <div class="chart-wrap">
+    <svg width="100%" viewBox="0 0 800 290" preserveAspectRatio="xMidYMid meet">
+      <line x1="20" y1="220" x2="780" y2="220" stroke="#aaa"/>
+
+      <!-- 그룹 1: 노출 -->
+      <g class="funnel-group active" data-stage="impression" onclick="showTrend('impression', this)">
+        <rect class="stage-frame" x="60" y="35" width="130" height="220" rx="4"/>
+        <rect x="80" y="55" width="40" height="165" fill="#bbb"/>
+        <text x="100" y="50" font-size="11" text-anchor="middle" fill="#666">247K</text>
+        <rect x="130" y="53" width="40" height="167" fill="#4a90e2"/>
+        <text x="150" y="48" font-size="11" text-anchor="middle" fill="#4a90e2" font-weight="bold">250K</text>
+        <text x="125" y="245" font-size="13" text-anchor="middle" font-weight="bold">노출</text>
+        <text x="125" y="262" font-size="11" text-anchor="middle" fill="#5cb85c">▲ +1.2%</text>
+      </g>
+
+      <!-- 그룹 2: 클릭 -->
+      <g class="funnel-group" data-stage="click" onclick="showTrend('click', this)">
+        <rect class="stage-frame" x="260" y="35" width="130" height="220" rx="4"/>
+        <rect x="280" y="55" width="40" height="165" fill="#bbb"/>
+        <text x="300" y="50" font-size="11" text-anchor="middle" fill="#666">22K</text>
+        <rect x="330" y="70" width="40" height="150" fill="#5fa1d8"/>
+        <text x="350" y="65" font-size="11" text-anchor="middle" fill="#5fa1d8" font-weight="bold">20K</text>
+        <text x="325" y="245" font-size="13" text-anchor="middle" font-weight="bold">클릭</text>
+        <text x="325" y="262" font-size="11" text-anchor="middle" fill="#d9534f">CTR 8% (▼ -1.0%p)</text>
+      </g>
+
+      <!-- 그룹 3: 장바구니 -->
+      <g class="funnel-group" data-stage="cart" onclick="showTrend('cart', this)">
+        <rect class="stage-frame" x="460" y="35" width="130" height="220" rx="4"/>
+        <rect x="480" y="51" width="40" height="169" fill="#bbb"/>
+        <text x="500" y="46" font-size="11" text-anchor="middle" fill="#666">1,500</text>
+        <rect x="530" y="152" width="40" height="68" fill="#d9534f"/>
+        <text x="550" y="147" font-size="11" text-anchor="middle" fill="#d9534f" font-weight="bold">600</text>
+        <text x="525" y="245" font-size="13" text-anchor="middle" font-weight="bold" fill="#d9534f">장바구니</text>
+        <text x="525" y="262" font-size="11" text-anchor="middle" fill="#d9534f" font-weight="bold">전환율 3% (▼ -3%p 반토막!)</text>
+        <text x="525" y="278" font-size="11" text-anchor="middle" fill="#2c5cf5" font-weight="bold">👆 클릭해 추이 확인</text>
+      </g>
+
+      <!-- 그룹 4: 구매 -->
+      <g class="funnel-group" data-stage="purchase" onclick="showTrend('purchase', this)">
+        <rect class="stage-frame" x="660" y="35" width="130" height="220" rx="4"/>
+        <rect x="680" y="58" width="40" height="162" fill="#bbb"/>
+        <text x="700" y="53" font-size="11" text-anchor="middle" fill="#666">450</text>
+        <rect x="730" y="155" width="40" height="65" fill="#7d97b3"/>
+        <text x="750" y="150" font-size="11" text-anchor="middle" fill="#7d97b3" font-weight="bold">180</text>
+        <text x="725" y="245" font-size="13" text-anchor="middle" font-weight="bold">구매</text>
+        <text x="725" y="262" font-size="11" text-anchor="middle" fill="#d9534f">전환율 0.9% (▼ -0.9%p)</text>
+      </g>
+    </svg>
+    <div class="chart-legend" style="justify-content:center;">
+      <div class="legend-item"><div class="legend-color" style="background:#bbb; width:14px; height:14px;"></div> 전주</div>
+      <div class="legend-item"><div class="legend-color" style="background:#4a90e2; width:14px; height:14px;"></div> 금주</div>
+    </div>
+  </div>
+
+  <!-- 일별 추이 (4종, 디폴트=노출) -->
+  <div class="chart-wrap" style="margin-top:24px;">
+    <div class="chart-title" id="trend-title">일별 노출 추이 (최근 14일)</div>
+    <div class="chart-subhint" id="trend-subhint">위 퍼널에서 다른 단계를 클릭하면 해당 지표 추이로 전환됩니다</div>
+
+    <!-- 노출 추이 (디폴트) -->
+    <svg id="trend-impression" class="trend-chart active" width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0</text><text x="50" y="159" font-size="11" fill="#888" text-anchor="end">12.5K</text><text x="50" y="114" font-size="11" fill="#888" text-anchor="end">25K</text><text x="50" y="69" font-size="11" fill="#888" text-anchor="end">37.5K</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">50K</text>
+      <text x="100" y="220" font-size="10" fill="#666" text-anchor="middle">5/06</text><text x="150" y="220" font-size="10" fill="#666" text-anchor="middle">5/07</text><text x="200" y="220" font-size="10" fill="#666" text-anchor="middle">5/08</text><text x="250" y="220" font-size="10" fill="#666" text-anchor="middle">5/09</text><text x="300" y="220" font-size="10" fill="#666" text-anchor="middle">5/10</text><text x="350" y="220" font-size="10" fill="#666" text-anchor="middle">5/11</text><text x="400" y="220" font-size="10" fill="#666" text-anchor="middle">5/12</text><text x="450" y="220" font-size="10" fill="#666" text-anchor="middle">5/13</text><text x="500" y="220" font-size="10" fill="#666" text-anchor="middle">5/14</text><text x="550" y="220" font-size="10" fill="#666" text-anchor="middle">5/15</text><text x="600" y="220" font-size="10" fill="#666" text-anchor="middle">5/16</text><text x="650" y="220" font-size="10" fill="#666" text-anchor="middle">5/17</text><text x="700" y="220" font-size="10" fill="#666" text-anchor="middle">5/18</text><text x="750" y="220" font-size="10" fill="#666" text-anchor="middle">5/19</text>
+      <polyline points="100,74 150,63 200,70 250,67 300,60 350,70 400,74 450,63 500,67 550,70 600,60 650,63 700,74 750,70" stroke="#4a90e2" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="74" r="3" fill="#4a90e2"/><circle cx="150" cy="63" r="3" fill="#4a90e2"/><circle cx="200" cy="70" r="3" fill="#4a90e2"/><circle cx="250" cy="67" r="3" fill="#4a90e2"/><circle cx="300" cy="60" r="3" fill="#4a90e2"/><circle cx="350" cy="70" r="3" fill="#4a90e2"/><circle cx="400" cy="74" r="3" fill="#4a90e2"/><circle cx="450" cy="63" r="3" fill="#4a90e2"/><circle cx="500" cy="67" r="3" fill="#4a90e2"/><circle cx="550" cy="70" r="3" fill="#4a90e2"/><circle cx="600" cy="60" r="3" fill="#4a90e2"/><circle cx="650" cy="63" r="3" fill="#4a90e2"/><circle cx="700" cy="74" r="3" fill="#4a90e2"/><circle cx="750" cy="70" r="3" fill="#4a90e2"/>
+      <text x="600" y="55" font-size="12" fill="#5cb85c" font-weight="bold">→ 노출은 평탄 (변화 없음)</text>
+    </svg>
+
+    <!-- 클릭 추이 -->
+    <svg id="trend-click" class="trend-chart" width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0%</text><text x="50" y="159" font-size="11" fill="#888" text-anchor="end">3%</text><text x="50" y="114" font-size="11" fill="#888" text-anchor="end">6%</text><text x="50" y="69" font-size="11" fill="#888" text-anchor="end">9%</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">12%</text>
+      <text x="100" y="220" font-size="10" fill="#666" text-anchor="middle">5/06</text><text x="150" y="220" font-size="10" fill="#666" text-anchor="middle">5/07</text><text x="200" y="220" font-size="10" fill="#666" text-anchor="middle">5/08</text><text x="250" y="220" font-size="10" fill="#666" text-anchor="middle">5/09</text><text x="300" y="220" font-size="10" fill="#666" text-anchor="middle">5/10</text><text x="350" y="220" font-size="10" fill="#666" text-anchor="middle">5/11</text><text x="400" y="220" font-size="10" fill="#666" text-anchor="middle">5/12</text><text x="450" y="220" font-size="10" fill="#666" text-anchor="middle">5/13</text><text x="500" y="220" font-size="10" fill="#666" text-anchor="middle">5/14</text><text x="550" y="220" font-size="10" fill="#666" text-anchor="middle">5/15</text><text x="600" y="220" font-size="10" fill="#666" text-anchor="middle">5/16</text><text x="650" y="220" font-size="10" fill="#666" text-anchor="middle">5/17</text><text x="700" y="220" font-size="10" fill="#666" text-anchor="middle">5/18</text><text x="750" y="220" font-size="10" fill="#666" text-anchor="middle">5/19</text>
+      <polyline points="100,64 150,65 200,67 250,62 300,65 350,64 400,67 450,68 500,67 550,73 600,74 650,77 700,80 750,80" stroke="#5fa1d8" stroke-width="3" fill="none"/>
+      <text x="600" y="55" font-size="12" fill="#d9534f" font-weight="bold">→ CTR 소폭 하락 (9% → 8%)</text>
+    </svg>
+
+    <!-- 장바구니 전환율 추이 -->
+    <svg id="trend-cart" class="trend-chart" width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0%</text><text x="50" y="159" font-size="11" fill="#888" text-anchor="end">2%</text><text x="50" y="114" font-size="11" fill="#888" text-anchor="end">4%</text><text x="50" y="69" font-size="11" fill="#888" text-anchor="end">6%</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">8%</text>
+      <text x="100" y="220" font-size="10" fill="#666" text-anchor="middle">5/06</text><text x="150" y="220" font-size="10" fill="#666" text-anchor="middle">5/07</text><text x="200" y="220" font-size="10" fill="#666" text-anchor="middle">5/08</text><text x="250" y="220" font-size="10" fill="#666" text-anchor="middle">5/09</text><text x="300" y="220" font-size="10" fill="#666" text-anchor="middle">5/10</text><text x="350" y="220" font-size="10" fill="#666" text-anchor="middle">5/11</text><text x="400" y="220" font-size="10" fill="#666" text-anchor="middle">5/12</text><text x="450" y="220" font-size="10" fill="#666" text-anchor="middle">5/13</text><text x="500" y="220" font-size="10" fill="#666" text-anchor="middle">5/14</text><text x="550" y="220" font-size="10" fill="#d9534f" text-anchor="middle" font-weight="bold">5/15</text><text x="600" y="220" font-size="10" fill="#666" text-anchor="middle">5/16</text><text x="650" y="220" font-size="10" fill="#666" text-anchor="middle">5/17</text><text x="700" y="220" font-size="10" fill="#666" text-anchor="middle">5/18</text><text x="750" y="220" font-size="10" fill="#666" text-anchor="middle">5/19</text>
+      <line x1="550" y1="20" x2="550" y2="200" stroke="#d9534f" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+      <text x="555" y="35" font-size="11" fill="#d9534f" font-weight="bold">급락 시작!</text>
+      <polyline points="100,63 150,65 200,67 250,65 300,60 350,65 400,67 450,69 500,72 550,88 600,99 650,110 700,121 750,132" stroke="#d9534f" stroke-width="3" fill="none"/>
+      <circle cx="100" cy="63" r="3" fill="#d9534f"/><circle cx="150" cy="65" r="3" fill="#d9534f"/><circle cx="200" cy="67" r="3" fill="#d9534f"/><circle cx="250" cy="65" r="3" fill="#d9534f"/><circle cx="300" cy="60" r="3" fill="#d9534f"/><circle cx="350" cy="65" r="3" fill="#d9534f"/><circle cx="400" cy="67" r="3" fill="#d9534f"/><circle cx="450" cy="69" r="3" fill="#d9534f"/><circle cx="500" cy="72" r="3" fill="#d9534f"/><circle cx="550" cy="88" r="4" fill="#d9534f"/><circle cx="600" cy="99" r="3" fill="#d9534f"/><circle cx="650" cy="110" r="3" fill="#d9534f"/><circle cx="700" cy="121" r="3" fill="#d9534f"/><circle cx="750" cy="132" r="4" fill="#d9534f"/>
+      <text x="755" y="132" font-size="11" fill="#d9534f" font-weight="bold">3.0%</text>
+      <text x="100" y="55" font-size="11" fill="#666">6.1%</text>
+    </svg>
+
+    <!-- 구매 추이 -->
+    <svg id="trend-purchase" class="trend-chart" width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0%</text><text x="50" y="159" font-size="11" fill="#888" text-anchor="end">0.75%</text><text x="50" y="114" font-size="11" fill="#888" text-anchor="end">1.5%</text><text x="50" y="69" font-size="11" fill="#888" text-anchor="end">2.25%</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">3%</text>
+      <text x="100" y="220" font-size="10" fill="#666" text-anchor="middle">5/06</text><text x="150" y="220" font-size="10" fill="#666" text-anchor="middle">5/07</text><text x="200" y="220" font-size="10" fill="#666" text-anchor="middle">5/08</text><text x="250" y="220" font-size="10" fill="#666" text-anchor="middle">5/09</text><text x="300" y="220" font-size="10" fill="#666" text-anchor="middle">5/10</text><text x="350" y="220" font-size="10" fill="#666" text-anchor="middle">5/11</text><text x="400" y="220" font-size="10" fill="#666" text-anchor="middle">5/12</text><text x="450" y="220" font-size="10" fill="#666" text-anchor="middle">5/13</text><text x="500" y="220" font-size="10" fill="#666" text-anchor="middle">5/14</text><text x="550" y="220" font-size="10" fill="#d9534f" text-anchor="middle" font-weight="bold">5/15</text><text x="600" y="220" font-size="10" fill="#666" text-anchor="middle">5/16</text><text x="650" y="220" font-size="10" fill="#666" text-anchor="middle">5/17</text><text x="700" y="220" font-size="10" fill="#666" text-anchor="middle">5/18</text><text x="750" y="220" font-size="10" fill="#666" text-anchor="middle">5/19</text>
+      <line x1="550" y1="20" x2="550" y2="200" stroke="#d9534f" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+      <polyline points="100,92 150,92 200,98 250,92 300,86 350,92 400,98 450,98 500,92 550,116 600,128 650,134 700,140 750,146" stroke="#7d97b3" stroke-width="3" fill="none"/>
+      <text x="600" y="55" font-size="12" fill="#d9534f" font-weight="bold">→ 구매 전환도 같이 급락</text>
+    </svg>
+  </div>
+
+  <div class="kpis three" style="margin-top:16px;">
+    <div class="kpi"><div class="kpi-label">CTR</div><div class="kpi-value">8.0%</div><div class="kpi-change down">▼ -1.0%p</div></div>
+    <div class="kpi highlight"><div class="kpi-label">장바구니 전환율</div><div class="kpi-value bad">3.0%</div><div class="kpi-change down">▼ -3.0%p · 반토막</div></div>
+    <div class="kpi"><div class="kpi-label">구매전환율</div><div class="kpi-value bad">0.9%</div><div class="kpi-change down">▼ -0.9%p</div></div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 결과 요약</h4>
+  <div class="diagnosis-card">
+    <b>에센셜 트레이닝 자켓 · 매출 -45%</b><br>
+    <strong style="font-size:15px;">원인: 전환 실패 (장바구니 전환율 6% → 3%, 5/15부터 급락)</strong><br>
+    제안 액션: PDP 점검 (가격·이미지·후기·상세설명)
+  </div>
+
+  <h4>🔗 다음 분석으로 이동 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 8)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary"><b>📝 DS#3 고객 반응 모니터링</b>이 상품의 리뷰·별점 변화 확인 (부정 리뷰 급증 여부)</div>
+    <div class="action-card secondary"><b>🔗 PDP 직접 점검</b>가격·이미지·상세설명 직접 확인 (PDP 새 탭 열기)</div>
+    <div class="action-card locked"><b>🔒 상품 성과 진단 - 시장 포지션 비교</b>Peer Group 내 이 상품 랭킹 변동 확인<br><em>Premium 요금제 업그레이드 필요</em></div>
+  </div>
+</div>
+
+<script>
+  const productData = {
+    all: [
+      { rank:1, name:'클래식 발마칸 코트', uid:'1233101', cat:'아우터', gmv:'₩18M', change:'+6%', changeClass:'up-pct', qty:230, click:false },
+      { rank:2, name:'에센셜 트레이닝 자켓', uid:'1234567', cat:'스포츠웨어', gmv:'₩12M', change:'-45%', changeClass:'down-pct', qty:180, click:true },
+      { rank:3, name:'오버사이즈 후드 스웻셔츠', uid:'1234568', cat:'스포츠웨어', gmv:'₩9M', change:'+12%', changeClass:'up-pct', qty:140, click:false },
+      { rank:4, name:'미니멀 토트백', uid:'1235501', cat:'액세서리', gmv:'₩8M', change:'+4%', changeClass:'up-pct', qty:160, click:false },
+      { rank:5, name:'클래식 로우 스니커즈', uid:'1236201', cat:'신발', gmv:'₩7M', change:'+8%', changeClass:'up-pct', qty:110, click:false }
+    ],
+    sportswear: [
+      { rank:1, name:'에센셜 트레이닝 자켓', uid:'1234567', cat:'스포츠웨어', gmv:'₩12M', change:'-45%', changeClass:'down-pct', qty:180, click:true },
+      { rank:2, name:'오버사이즈 후드 스웻셔츠', uid:'1234568', cat:'스포츠웨어', gmv:'₩9M', change:'+12%', changeClass:'up-pct', qty:140, click:false },
+      { rank:3, name:'테크플리스 풀집 자켓', uid:'1234569', cat:'스포츠웨어', gmv:'₩7M', change:'+8%', changeClass:'up-pct', qty:110, click:false },
+      { rank:4, name:'코어 트레이닝 팬츠', uid:'1234570', cat:'스포츠웨어', gmv:'₩5M', change:'+5%', changeClass:'up-pct', qty:95, click:false },
+      { rank:5, name:'러닝 컴프레션 티', uid:'1234571', cat:'스포츠웨어', gmv:'₩4M', change:'+3%', changeClass:'up-pct', qty:82, click:false }
+    ],
+    outer: [
+      { rank:1, name:'클래식 발마칸 코트', uid:'1233101', cat:'아우터', gmv:'₩18M', change:'+6%', changeClass:'up-pct', qty:230, click:false },
+      { rank:2, name:'테일러드 싱글 자켓', uid:'1233102', cat:'아우터', gmv:'₩14M', change:'+9%', changeClass:'up-pct', qty:180, click:false },
+      { rank:3, name:'미니멀 트렌치 코트', uid:'1233103', cat:'아우터', gmv:'₩11M', change:'+4%', changeClass:'up-pct', qty:140, click:false },
+      { rank:4, name:'캐주얼 블레이저', uid:'1233104', cat:'아우터', gmv:'₩8M', change:'+2%', changeClass:'up-pct', qty:100, click:false }
+    ],
+    shoes: [
+      { rank:1, name:'클래식 로우 스니커즈', uid:'1236201', cat:'신발', gmv:'₩7M', change:'+8%', changeClass:'up-pct', qty:110, click:false },
+      { rank:2, name:'레더 더비 슈즈', uid:'1236202', cat:'신발', gmv:'₩5M', change:'+5%', changeClass:'up-pct', qty:75, click:false },
+      { rank:3, name:'캔버스 스니커즈', uid:'1236203', cat:'신발', gmv:'₩4M', change:'+3%', changeClass:'up-pct', qty:88, click:false }
+    ],
+    accessory: [
+      { rank:1, name:'미니멀 토트백', uid:'1235501', cat:'액세서리', gmv:'₩8M', change:'+4%', changeClass:'up-pct', qty:160, click:false },
+      { rank:2, name:'레더 카드 홀더', uid:'1235502', cat:'액세서리', gmv:'₩3M', change:'+7%', changeClass:'up-pct', qty:220, click:false },
+      { rank:3, name:'클래식 벨트', uid:'1235503', cat:'액세서리', gmv:'₩2M', change:'+2%', changeClass:'up-pct', qty:140, click:false }
+    ]
+  };
+
+  const trendTitles = {
+    impression: '일별 노출 추이 (최근 14일)',
+    click: '일별 CTR 추이 (최근 14일)',
+    cart: '일별 장바구니 전환율 추이 (최근 14일)',
+    purchase: '일별 구매전환율 추이 (최근 14일)'
+  };
+
+  function selectCategory(cat, btn) {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const tbody = document.getElementById('rank-body');
+    const items = productData[cat] || [];
+    tbody.innerHTML = items.map(item => {
+      if (item.click) {
+        return `<tr class="row-highlight" onclick="goToFunnel()"><td>${item.rank}</td><td><span class="drill-link">${item.name}</span> ← 클릭</td><td>${item.uid}</td><td>${item.cat}</td><td>${item.gmv}</td><td class="${item.changeClass}">▼ ${item.change}</td><td>${item.qty}</td></tr>`;
+      } else {
+        const arrow = item.change.startsWith('+') ? '▲' : '▼';
+        return `<tr class="clickable"><td>${item.rank}</td><td>${item.name}</td><td>${item.uid}</td><td>${item.cat}</td><td>${item.gmv}</td><td class="${item.changeClass}">${arrow} ${item.change}</td><td>${item.qty}</td></tr>`;
+      }
+    }).join('');
+  }
+
+  function showTrend(stage, el) {
+    // 차트 전환
+    document.querySelectorAll('.trend-chart').forEach(c => c.classList.remove('active'));
+    document.getElementById('trend-' + stage).classList.add('active');
+    document.getElementById('trend-title').textContent = trendTitles[stage];
+    // 퍼널 그룹 active 표시
+    document.querySelectorAll('.funnel-group').forEach(g => g.classList.remove('active'));
+    el.classList.add('active');
+    // 서브 힌트 업데이트
+    if (stage === 'cart') {
+      document.getElementById('trend-subhint').innerHTML = '<strong style="color:#d9534f;">→ 5/15부터 6%에서 3%로 급락 시작! 원인 발견</strong>';
+    } else {
+      document.getElementById('trend-subhint').textContent = '위 퍼널에서 다른 단계를 클릭하면 해당 지표 추이로 전환됩니다';
+    }
+  }
+
+  function goToFunnel() {
+    document.getElementById('screen-1').classList.remove('active');
+    document.getElementById('header-1').style.display = 'none';
+    document.getElementById('screen-2').classList.add('active');
+    document.getElementById('header-2').style.display = 'inline-block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  function goBack() {
+    document.getElementById('screen-2').classList.remove('active');
+    document.getElementById('header-2').style.display = 'none';
+    document.getElementById('screen-1').classList.add('active');
+    document.getElementById('header-1').style.display = 'inline-block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  selectCategory('all', document.querySelector('.cat-tab.active'));
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC5 - 입소문 진원지 식별</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #5cb85c; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #5cb85c; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #d4edda; border: 1px solid #5cb85c; border-radius: 4px; font-size: 12px; font-weight: 600; color: #1e7e34; }
+
+  .filter-bar { display: flex; gap: 12px; padding: 12px; background: #f0f0f0; border-radius: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter { padding: 6px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+
+  .product-info { padding: 12px 16px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; margin-bottom: 16px; font-size: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.good-highlight { background: #e8f5e9; border-color: #5cb85c; }
+  .kpi-label { font-size: 12px; color: #666; }
+  .kpi-value { font-size: 22px; font-weight: bold; margin: 4px 0; }
+  .kpi-value.good { color: #1e7e34; }
+  .kpi-value.small { font-size: 16px; }
+  .kpi-change { font-size: 12px; }
+  .kpi-change.up { color: #1e7e34; font-weight: 600; }
+  .kpi-change.neutral { color: #888; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  .chart-title { font-size: 13px; color: #444; margin-bottom: 8px; font-weight: 600; }
+  .chart-legend { display: flex; gap: 16px; font-size: 12px; color: #555; margin-top: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-color { width: 16px; height: 14px; }
+
+  .seg-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13px; padding: 6px 8px; border-radius: 4px; }
+  .seg-row.suggested { background: #e8f5e9; border: 2px solid #5cb85c; }
+  .seg-label { width: 180px; font-weight: 500; }
+  .seg-label b { color: #1e7e34; }
+  .seg-bar-wrap { flex: 1; background: #f0f0f0; height: 24px; border-radius: 3px; overflow: hidden; }
+  .seg-bar { height: 100%; border-radius: 3px; }
+  .seg-bar.lvl5 { background: #1e7e34; }
+  .seg-bar.lvl4 { background: #5cb85c; }
+  .seg-bar.lvl3 { background: #88c558; }
+  .seg-bar.lvl2 { background: #a8d588; }
+  .seg-bar.lvl1 { background: #c5e0c5; }
+  .seg-pct { width: 70px; text-align: right; font-weight: 600; color: #1e7e34; }
+  .seg-customers { width: 90px; text-align: right; color: #888; font-size: 12px; }
+
+  /* 비교 막대 (자사 vs 무신사) */
+  .compare-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 13px; }
+  .compare-label { width: 90px; font-weight: 500; }
+  .compare-pair { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .compare-pair .line { display: flex; align-items: center; gap: 8px; }
+  .compare-pair .src { width: 60px; font-size: 11px; color: #666; }
+  .compare-pair .bar-wrap { flex: 1; background: #f0f0f0; height: 18px; border-radius: 3px; overflow: hidden; }
+  .compare-pair .bar { height: 100%; }
+  .compare-pair .bar.self { background: #5cb85c; }
+  .compare-pair .bar.market { background: #aaa; }
+  .compare-pair .pct { width: 50px; text-align: right; font-size: 12px; font-weight: 600; }
+  .gap-tag { background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-left: 4px; }
+
+  .diagnosis-card { padding: 18px; background: #e8f5e9; border-left: 4px solid #1e7e34; margin-bottom: 16px; border-radius: 4px; }
+  .diagnosis-card h3 { margin: 0 0 8px; font-size: 18px; color: #1e7e34; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #d4edda; border-left: 4px solid #5cb85c; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #e7e8ea; border-left: 4px solid #6c757d; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 고객 프로파일 진단</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC5 :</b> 파트너는 베스트셀러 후보의 확장 가능한 잠재 고객 시장을 발견할 수 있다.</div>
+  <div class="step-line"><b>Step 9</b> UC4 다음 액션에서 고객 프로파일 진단 진입 → 같은 상품(에어로 라이트 윈드 자켓) 자동 조회</div>
+  <div class="step-line"><b>Step 10</b> 구매고객 수·신규 비중 확인 → <strong>신규 고객 +180% / 신규 비중 30% → 65% 폭증</strong></div>
+  <div class="step-line"><b>Step 11</b> 인구통계 세그먼트 분포 확인 → <strong>20대 여성 신규 고객이 가장 큰 비중</strong> (신규 중 55%) → 반응 세그먼트 식별</div>
+  <div class="step-line"><b>Step 12</b> 동일 카테고리(스포츠웨어 자켓) 안 자사 vs 무신사 평균 비교 → <strong>20대 여성에서 자사 12% vs 카테고리 평균 22%, 갭 +10%p 발견</strong></div>
+  <div class="step-line"><b>Step 13</b> 갭의 의미 판별 → <strong>잠재 시장인지 경쟁력 부족인지 UC6에서 퍼널 검증 필요</strong></div>
+  <div class="step-line"><b>Step 14</b> 다음 분석: 상품 성과 진단(UC6)으로 이동해 퍼널 결합으로 잠재 시장 확정 + 부스팅 액션</div>
+</div>
+
+<div class="step-header">Step 9-13 · 고객 프로파일 진단</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>고객 프로파일 진단</b></div>
+    <div class="tier-badge">Basic 요금제</div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter">📅 기간: 2026.05.13 ~ 2026.05.19 (주간)</div>
+    <div class="filter">🔍 상품: 에어로 라이트 윈드 자켓 ▼</div>
+    <div class="filter">⚙️ 비교: 전월 대비 ▼</div>
+  </div>
+
+  <div class="product-info">
+    <b>에어로 라이트 윈드 자켓</b> · UID 1238901 · 🆕 신상품 (5/15 출시) · <span style="color:#888; font-size:12px;">UC4(고객 반응 모니터링)에서 자동 조회됨</span>
+  </div>
+
+  <h4>핵심 지표</h4>
+  <div class="kpis">
+    <div class="kpi good-highlight">
+      <div class="kpi-label">총 구매고객 수</div>
+      <div class="kpi-value good">288명</div>
+      <div class="kpi-change up">▲ +180% vs 전월</div>
+    </div>
+    <div class="kpi good-highlight">
+      <div class="kpi-label">신규 고객 수</div>
+      <div class="kpi-value good">187명</div>
+      <div class="kpi-change up">▲ +245% 폭증</div>
+    </div>
+    <div class="kpi good-highlight">
+      <div class="kpi-label">신규 고객 비중</div>
+      <div class="kpi-value good">65%</div>
+      <div class="kpi-change up">▲ 30% → 65%</div>
+    </div>
+    <div class="kpi good-highlight">
+      <div class="kpi-label">🔥 반응 세그먼트</div>
+      <div class="kpi-value good small">20대 여성 신규</div>
+      <div class="kpi-change up">신규 중 55%</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">인구통계 세그먼트별 신규 고객 비중 (반응 세그먼트 식별)</h4>
+  <div class="chart-wrap">
+    <div class="seg-row suggested">
+      <div class="seg-label"><b>20대 여성 신규 🔥</b></div>
+      <div class="seg-bar-wrap"><div class="seg-bar lvl5" style="width:88%;"></div></div>
+      <div class="seg-pct">55%</div>
+      <div class="seg-customers">103명</div>
+    </div>
+    <div class="seg-row">
+      <div class="seg-label">30대 여성 신규</div>
+      <div class="seg-bar-wrap"><div class="seg-bar lvl4" style="width:30%;"></div></div>
+      <div class="seg-pct">18%</div>
+      <div class="seg-customers">34명</div>
+    </div>
+    <div class="seg-row">
+      <div class="seg-label">20대 남성 신규</div>
+      <div class="seg-bar-wrap"><div class="seg-bar lvl3" style="width:20%;"></div></div>
+      <div class="seg-pct">12%</div>
+      <div class="seg-customers">22명</div>
+    </div>
+    <div class="seg-row">
+      <div class="seg-label">30대 남성 신규</div>
+      <div class="seg-bar-wrap"><div class="seg-bar lvl2" style="width:12%;"></div></div>
+      <div class="seg-pct">8%</div>
+      <div class="seg-customers">15명</div>
+    </div>
+    <div class="seg-row">
+      <div class="seg-label">40대+ 신규 (남·여)</div>
+      <div class="seg-bar-wrap"><div class="seg-bar lvl1" style="width:8%;"></div></div>
+      <div class="seg-pct">7%</div>
+      <div class="seg-customers">13명</div>
+    </div>
+    <div style="margin-top:14px; font-size:13px; color:#1e7e34; font-weight:600; padding:10px 14px; background:#e8f5e9; border-radius:4px;">
+      🔥 <strong>20대 여성 신규 고객</strong>이 신규 유입의 55%를 차지 → 이 상품에 가장 강하게 반응한 핵심 세그먼트
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">동일 카테고리(스포츠웨어 자켓) 안 자사 브랜드 vs 무신사 평균 인구통계 비교</h4>
+  <div style="font-size:12px; color:#666; margin-bottom:12px; padding:8px 12px; background:#eef4fb; border-radius:4px;">
+    💡 비교 범위를 <b>동일 카테고리</b>로 좁혀서 정확한 갭 측정 (브랜드 전체 비교는 너무 거시적)<br>
+    • <b>자사 브랜드</b>: 같은 카테고리에서 <b>내 브랜드 산 고객</b> 인구통계<br>
+    • <b>카테고리 무신사 평균</b>: 같은 카테고리에서 <b>무신사 전체 구매고객</b> 인구통계<br>
+    → 같은 시장 안에서 우리 브랜드가 어느 세그먼트에 도달 못 했는지 측정
+  </div>
+  <div class="chart-wrap">
+    <div class="compare-row">
+      <div class="compare-label">10대 여성</div>
+      <div class="compare-pair">
+        <div class="line"><div class="src">자사 브랜드</div><div class="bar-wrap"><div class="bar self" style="width:5%;"></div></div><div class="pct">5%</div></div>
+        <div class="line"><div class="src">카테고리 평균</div><div class="bar-wrap"><div class="bar market" style="width:8%;"></div></div><div class="pct">8%</div></div>
+      </div>
+    </div>
+    <div class="compare-row" style="background:#e8f5e9; padding:10px; border-radius:4px;">
+      <div class="compare-label"><b style="color:#1e7e34;">20대 여성 🔥</b></div>
+      <div class="compare-pair">
+        <div class="line"><div class="src">자사 브랜드</div><div class="bar-wrap"><div class="bar self" style="width:24%;"></div></div><div class="pct" style="color:#1e7e34;">12%</div></div>
+        <div class="line"><div class="src">카테고리 평균</div><div class="bar-wrap"><div class="bar market" style="width:44%;"></div></div><div class="pct">22% <span class="gap-tag">갭 +10%p</span></div></div>
+      </div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-label">30대 여성</div>
+      <div class="compare-pair">
+        <div class="line"><div class="src">자사 브랜드</div><div class="bar-wrap"><div class="bar self" style="width:30%;"></div></div><div class="pct">15%</div></div>
+        <div class="line"><div class="src">카테고리 평균</div><div class="bar-wrap"><div class="bar market" style="width:36%;"></div></div><div class="pct">18%</div></div>
+      </div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-label">20대 남성</div>
+      <div class="compare-pair">
+        <div class="line"><div class="src">자사 브랜드</div><div class="bar-wrap"><div class="bar self" style="width:36%;"></div></div><div class="pct">18%</div></div>
+        <div class="line"><div class="src">카테고리 평균</div><div class="bar-wrap"><div class="bar market" style="width:40%;"></div></div><div class="pct">20%</div></div>
+      </div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-label">30대 남성</div>
+      <div class="compare-pair">
+        <div class="line"><div class="src">자사 브랜드</div><div class="bar-wrap"><div class="bar self" style="width:50%;"></div></div><div class="pct">25%</div></div>
+        <div class="line"><div class="src">카테고리 평균</div><div class="bar-wrap"><div class="bar market" style="width:36%;"></div></div><div class="pct">18%</div></div>
+      </div>
+    </div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-color" style="background:#5cb85c"></div> 자사 브랜드 (스포츠웨어 자켓 카테고리 안)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#aaa"></div> 카테고리 무신사 평균</div>
+    </div>
+    <div style="margin-top:14px; font-size:13px; color:#1e7e34; font-weight:600; padding:10px 14px; background:#fff3cd; border-radius:4px;">
+      💡 <strong>20대 여성에서 갭 +10%p</strong> → 같은 카테고리에서 무신사 평균 22% vs 자사 브랜드 12%
+    </div>
+    <div style="margin-top:10px; font-size:13px; color:#856404; font-weight:500; padding:12px 14px; background:#fff3cd; border:1px dashed #ffc107; border-radius:4px;">
+      ⚠️ <strong>갭이 있다고 잠재 시장 확정 X</strong>. 두 가지 가능성을 다음 UC6에서 퍼널 데이터로 판별:<br>
+      • <b>잠재 시장</b>: 20대 여성에게 노출·클릭은 있는데 구매가 적다 → 장벽 제거 시 확장 가능<br>
+      • <b>경쟁력 부족</b>: 노출·클릭부터 적다 → 본질적으로 안 맞음<br>
+      → UC6에서 노출·클릭·구매 퍼널 결합으로 잠재 시장 확정 후 부스팅 액션
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 결과</h4>
+  <div class="diagnosis-card">
+    <h3>🎯 반응 세그먼트 + 갭 발견</h3>
+    <b>에어로 라이트 윈드 자켓 · 신규 고객 +180% 폭증</b><br>
+    <strong>반응 세그먼트: 20대 여성 신규 고객 (신규 유입의 55%)</strong><br>
+    <strong>카테고리 단위 갭: 20대 여성 +10%p</strong> (자사 12% vs 카테고리 평균 22%)<br>
+    <span style="font-size:12px; color:#856404; font-weight:600;">⚠️ 갭이 잠재 시장인지·경쟁력 부족인지 판별 필요</span><br>
+    <span style="font-size:12px; color:#666;">→ 다음 단계: 상품 성과 진단으로 이동해 퍼널 결합으로 잠재 시장 확정 후 부스팅 액션</span>
+  </div>
+
+  <h4>🔗 다음 액션 검토 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 13)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary">
+      <b>📈 다음 분석: 상품 성과 진단</b>
+      매출·퍼널·peer 랭킹 확인 후<br>노출 강화·재고 확보 액션 도출
+    </div>
+    <div class="action-card secondary">
+      <b>📨 20대 여성 잠재 고객 CRM</b>
+      입소문이 닿지 않은 20대 여성 잠재 고객에<br>상품 인지 캠페인 발송
+    </div>
+    <div class="action-card tertiary">
+      <b>📊 영업·MD 공유</b>
+      입소문 진원지 정보 즉시 공유<br>마케팅 캠페인 타겟 정밀화
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

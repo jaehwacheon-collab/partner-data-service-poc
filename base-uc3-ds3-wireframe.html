@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>기본 UC3: DS#3 고객 반응 모니터링 (주간 점검)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", sans-serif; margin: 0; padding: 0; background: #f5f6f8; color: #1a1a1a; }
+  .header { background: white; border-bottom: 1px solid #e0e3e8; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb .current { color: #111; font-weight: 600; }
+  .user-info { font-size: 13px; color: #555; }
+  .tier-badge { display: inline-block; background: #dbeafe; color: #1e40af; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-left: 8px; font-weight: 600; }
+
+  .container { max-width: 1280px; margin: 0 auto; padding: 32px; }
+  .page-title { font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+  .page-subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+
+  .scenario-banner { background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; color: #065f46; }
+  .scenario-banner strong { color: #064e3b; }
+
+  .filter-bar { background: white; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; gap: 12px; font-size: 13px; }
+  .filter { background: #f0f2f5; padding: 6px 12px; border-radius: 6px; }
+  .filter strong { color: #111; }
+
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .summary-card { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .summary-card .label { font-size: 12px; color: #666; margin-bottom: 8px; }
+  .summary-card .value { font-size: 22px; font-weight: 700; color: #111; }
+  .summary-card .delta { font-size: 12px; margin-top: 4px; }
+  .delta.up { color: #059669; }
+  .delta.down { color: #dc2626; }
+
+  .panel { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .panel h3 { font-size: 16px; margin: 0 0 14px; }
+  .panel-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* Funnel with inline actions */
+  .funnel { padding: 6px 0; }
+  .funnel-step { margin-bottom: 12px; }
+  .funnel-step .step-label { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; font-size: 12px; margin-bottom: 4px; align-items: center; }
+  .funnel-step .step-name { color: #111; font-weight: 600; }
+  .funnel-step .step-value { color: #555; }
+  .funnel-bar { background: #e5e7eb; border-radius: 4px; overflow: hidden; height: 28px; }
+  .funnel-fill { background: linear-gradient(90deg, #10b981, #059669); height: 100%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 11px; font-weight: 600; }
+  .inline-action { background: #f0f2f5; color: #5a2ec4; border: 1px solid transparent; border-radius: 4px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .inline-action:hover { background: #ede9fe; border-color: #c4b5fd; }
+
+  /* Rating */
+  .rating-row { display: flex; gap: 16px; align-items: center; }
+  .rating-big { font-size: 48px; font-weight: 700; color: #111; }
+  .stars { color: #fbbf24; font-size: 18px; margin-bottom: 4px; }
+  .rating-meta { font-size: 12px; color: #666; }
+
+  .review-list { font-size: 13px; }
+  .review-item { padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
+  .review-item:last-child { border-bottom: none; }
+  .review-stars { color: #fbbf24; font-size: 12px; margin-bottom: 2px; }
+  .review-text { color: #333; margin-bottom: 2px; }
+  .review-meta { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .review-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .signal-list { font-size: 13px; }
+  .signal-item { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; background: #ecfeff; border-left: 3px solid #06b6d4; }
+  .signal-item.warning { background: #fef3c7; border-left-color: #f59e0b; }
+  .signal-item .signal-title { font-weight: 600; color: #111; margin-bottom: 2px; }
+  .signal-item .signal-meta { font-size: 12px; color: #666; margin-bottom: 8px; }
+  .signal-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .signal-actions .inline-action { background: white; }
+
+  /* Auto recommendation */
+  .auto-rec-section { background: linear-gradient(135deg, #f0f7ff 0%, #f7f0ff 100%); border-radius: 10px; padding: 20px; margin-top: 24px; border: 1px solid #d8b4fe; }
+  .auto-rec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .auto-rec-section h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .auto-rec-badge { background: #5a2ec4; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .auto-rec-criteria { font-size: 12px; color: #555; margin-bottom: 6px; }
+  .auto-rec-context { font-size: 12px; margin-bottom: 14px; padding: 8px 12px; background: white; border-radius: 6px; border: 1px solid #ddd6fe; }
+  .ctx-tag { display: inline-block; background: #ede9fe; color: #5a2ec4; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin: 0 4px; }
+  .next-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .next-card { background: white; border: 1px solid #d0d5dc; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+  .next-card:hover { border-color: #5a2ec4; transform: translateY(-1px); }
+  .next-card .nc-target { font-size: 11px; color: #5a2ec4; font-weight: 600; margin-bottom: 4px; }
+  .next-card .nc-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .next-card .nc-desc { font-size: 12px; color: #666; line-height: 1.5; }
+  .change-context { margin-top: 12px; font-size: 12px; color: #5a2ec4; text-align: right; cursor: pointer; }
+  .change-context:hover { text-decoration: underline; }
+
+  .annotation { background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 12px; color: #78350f; }
+  .annotation strong { color: #78350f; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 28px; max-width: 480px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .modal h2 { margin: 0 0 6px; font-size: 18px; }
+  .modal .modal-target { color: #5a2ec4; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .modal-context { background: #f7f5ff; border-radius: 8px; padding: 14px; margin-bottom: 18px; font-size: 13px; }
+  .modal-context .label { color: #666; font-size: 11px; margin-bottom: 6px; }
+  .modal-context .ctx-row { padding: 4px 0; }
+  .modal-context strong { color: #111; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .btn-cancel { background: #f0f2f5; color: #555; }
+  .btn-go { background: #5a2ec4; color: white; }
+  .btn-cancel:hover { background: #e0e3e8; }
+  .btn-go:hover { background: #4a1ea8; }
+
+  .demo-hint { position: fixed; bottom: 20px; right: 20px; background: #1a1a1a; color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="breadcrumb">팀무신사 인사이트 / <span class="current">고객 반응 모니터링 (DS#3)</span></div>
+    <div class="user-info">파트너: A브랜드 <span class="tier-badge">Basic 요금제</span></div>
+  </div>
+
+  <div class="container">
+    <div class="page-title">고객 반응 모니터링</div>
+    <div class="page-subtitle">자사 상품에 대한 노출/클릭/구매 퍼널과 리뷰/별점/시그널을 확인합니다.</div>
+
+    <div class="scenario-banner">
+      <strong>기본 UC3 시나리오</strong>: CS·운영 담당 이OO이 매주 월요일 오전에 이 페이지를 열어 "지난주 우리 상품에 고객이 어떻게 반응했는지" 확인하고 리뷰 대응·운영 이슈를 정리한다. 각 시그널·리뷰·퍼널 단계 옆의 <strong>→ 버튼</strong>으로 해당 컨텍스트의 분석으로 바로 이동할 수 있다.
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter">기간: <strong>최근 7일</strong></div>
+      <div class="filter">상품: <strong>전체 (45개)</strong></div>
+      <div class="filter">데이터: <strong>노출·클릭·구매·리뷰</strong></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="label">총 노출 수</div>
+        <div class="value">142,830</div>
+        <div class="delta up">▲ 8.2% vs 전주</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">클릭률 (CTR)</div>
+        <div class="value">4.7%</div>
+        <div class="delta up">▲ 0.3%p</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">구매 전환율</div>
+        <div class="value">2.1%</div>
+        <div class="delta down">▼ 0.2%p</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">평균 별점</div>
+        <div class="value">4.6</div>
+        <div class="delta up">▲ 0.1 vs 전주</div>
+      </div>
+    </div>
+
+    <!-- Funnel + Rating -->
+    <div class="panel-row">
+      <div class="panel">
+        <h3>구매 퍼널 (자사 전체)</h3>
+        <div class="funnel">
+          <div class="funnel-step">
+            <div class="step-label">
+              <span class="step-name">노출</span>
+              <span class="step-value">142,830</span>
+              <button class="inline-action" onclick="openModal('노출 단계 (전체 자사)', 'ds1', '노출 상품 매출')">→</button>
+            </div>
+            <div class="funnel-bar"><div class="funnel-fill" style="width: 100%;">100%</div></div>
+          </div>
+          <div class="funnel-step">
+            <div class="step-label">
+              <span class="step-name">클릭</span>
+              <span class="step-value">6,713 (4.7%)</span>
+              <button class="inline-action" onclick="openModal('클릭 단계 (전체 자사)', 'ds2', '클릭 고객 프로파일')">→</button>
+            </div>
+            <div class="funnel-bar"><div class="funnel-fill" style="width: 47%;">47% (CTR 스케일)</div></div>
+          </div>
+          <div class="funnel-step">
+            <div class="step-label">
+              <span class="step-name">장바구니</span>
+              <span class="step-value">1,028 (15.3% of 클릭)</span>
+              <button class="inline-action" onclick="openModal('장바구니 단계 (전체 자사)', 'ds2', '장바구니 이탈 고객')">→</button>
+            </div>
+            <div class="funnel-bar"><div class="funnel-fill" style="width: 25%;">25%</div></div>
+          </div>
+          <div class="funnel-step">
+            <div class="step-label">
+              <span class="step-name">구매</span>
+              <span class="step-value">298 (29% of 장바구니)</span>
+              <button class="inline-action" onclick="openModal('구매 단계 (전체 자사)', 'ds1', '구매 상품 매출')">→</button>
+            </div>
+            <div class="funnel-bar"><div class="funnel-fill" style="width: 12%;">12%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>별점 / 리뷰</h3>
+        <div class="rating-row" style="margin-bottom: 16px;">
+          <div class="rating-big">4.6</div>
+          <div>
+            <div class="stars">★★★★★</div>
+            <div class="rating-meta">7일간 신규 리뷰 <strong>87건</strong> (전주 72건)</div>
+          </div>
+        </div>
+        <div class="review-list">
+          <div class="review-item">
+            <div class="review-stars">★★★★★</div>
+            <div class="review-text">"오버사이즈 핏이 진짜 예뻐요. 키 165인데 딱 좋아요"</div>
+            <div class="review-meta">B상품 · 20대 후반 여성 · 2일 전</div>
+            <div class="review-actions">
+              <button class="inline-action" onclick="openModal('B상품 (오버사이즈 티)', 'ds1', '매출 추이')">→ DS#1 매출</button>
+              <button class="inline-action" onclick="openModal('B상품 (오버사이즈 티)', 'ds2', '구매 고객')">→ DS#2 고객</button>
+            </div>
+          </div>
+          <div class="review-item">
+            <div class="review-stars">★★★☆☆</div>
+            <div class="review-text">"색감은 예쁜데 사이즈가 좀 작아요. 한 사이즈 크게 사세요"</div>
+            <div class="review-meta">F상품 · 30대 초반 여성 · 3일 전</div>
+            <div class="review-actions">
+              <button class="inline-action" onclick="openModal('F상품 (스트라이프 셔츠)', 'ds1', '매출 추이')">→ DS#1 매출</button>
+              <button class="inline-action" onclick="openModal('F상품 (스트라이프 셔츠)', 'ds2', '구매 고객')">→ DS#2 고객</button>
+            </div>
+          </div>
+          <div class="review-item">
+            <div class="review-stars">★★★★☆</div>
+            <div class="review-text">"가격대비 만족. 다만 배송이 좀 늦었네요"</div>
+            <div class="review-meta">A상품 · 20대 후반 남성 · 4일 전</div>
+            <div class="review-actions">
+              <button class="inline-action" onclick="openModal('A상품 (블랙 후드)', 'ds1', '매출 추이')">→ DS#1 매출</button>
+              <button class="inline-action" onclick="openModal('A상품 (블랙 후드)', 'ds2', '구매 고객')">→ DS#2 고객</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signals -->
+    <div class="panel">
+      <h3>행동 시그널 (최근 7일)</h3>
+      <div class="signal-list">
+        <div class="signal-item">
+          <div class="signal-title">B상품 장바구니 담기 +186%</div>
+          <div class="signal-meta">평소 일평균 12건 → 7일 평균 34건. 입소문/리뷰 확산 시그널 가능</div>
+          <div class="signal-actions">
+            <button class="inline-action" onclick="openModal('B상품 (오버사이즈 티)', 'ds1', '매출 상승 확인')">→ DS#1 매출</button>
+            <button class="inline-action" onclick="openModal('B상품 (오버사이즈 티)', 'ds2', '구매 고객 프로파일')">→ DS#2 고객</button>
+          </div>
+        </div>
+        <div class="signal-item warning">
+          <div class="signal-title">F상품 클릭률 급락</div>
+          <div class="signal-meta">전주 5.1% → 3.2%. 노출은 유지되는데 클릭이 빠짐. 썸네일/타이틀 점검 권장</div>
+          <div class="signal-actions">
+            <button class="inline-action" onclick="openModal('F상품 (스트라이프 셔츠)', 'ds1', '매출 영향 확인')">→ DS#1 매출</button>
+            <button class="inline-action" onclick="openModal('F상품 (스트라이프 셔츠)', 'ds2', '클릭 이탈 고객')">→ DS#2 고객</button>
+          </div>
+        </div>
+        <div class="signal-item">
+          <div class="signal-title">A상품 검색 유입 +42%</div>
+          <div class="signal-meta">"블랙 후드" 키워드 검색 노출 급증</div>
+          <div class="signal-actions">
+            <button class="inline-action" onclick="openModal('A상품 (블랙 후드)', 'ds1', '매출 추이')">→ DS#1 매출</button>
+            <button class="inline-action" onclick="openModal('A상품 (블랙 후드)', 'ds2', '검색 유입 고객')">→ DS#2 고객</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <strong>이 시점에서 사용자 행동</strong>: 이OO은 시그널·리뷰·퍼널 단계 옆의 <strong>→ 버튼</strong>을 눌러 해당 컨텍스트로 바로 분석에 진입한다. 어떤 항목도 안 눌렀다면, 아래 "오늘 자동 추천 분석"이 가장 큰 행동 시그널을 자동 선정해 보여준다.
+    </div>
+
+    <!-- Auto recommendation -->
+    <div class="auto-rec-section">
+      <div class="auto-rec-header">
+        <h3>오늘 자동 추천 분석 <span class="auto-rec-badge">AUTO</span></h3>
+      </div>
+      <div class="auto-rec-criteria">시스템이 이번 주 가장 큰 행동 시그널을 자동 선정했습니다. <strong>선정 기준</strong>: 장바구니/구매/검색 시그널 변동률 절대값이 가장 큰 항목 (최근 7일 vs 평소 평균)</div>
+      <div class="auto-rec-context">
+        <div style="font-size: 11px; color: #666; margin-bottom: 4px;">선정 컨텍스트</div>
+        <span class="ctx-tag">B상품 (오버사이즈 티)</span> <span class="ctx-tag">장바구니 +186%</span> <span class="ctx-tag">최근 7일</span>
+      </div>
+      <div class="next-cards">
+        <div class="next-card" onclick="openModal('B상품 (오버사이즈 티)', 'ds1', '매출이 오르고 있는지')">
+          <div class="nc-target">→ DS#1 상품 성과 진단</div>
+          <div class="nc-title">B상품 매출이 실제로 오르고 있는지 보기</div>
+          <div class="nc-desc">장바구니 시그널이 매출로 이어지고 있는지 추이를 확인합니다.</div>
+        </div>
+        <div class="next-card" onclick="openModal('B상품 (오버사이즈 티)', 'ds2', '누가 사고 있는지')">
+          <div class="nc-target">→ DS#2 고객 프로파일 진단</div>
+          <div class="nc-title">B상품을 누가 사고 있는지 보기</div>
+          <div class="nc-desc">반응이 좋은 상품의 구매 고객 프로파일을 확인합니다.</div>
+        </div>
+      </div>
+      <div class="change-context" onclick="alert('컨텍스트 변경: 다른 시그널/리뷰/퍼널 행의 → 버튼을 누르거나, 여기서 직접 컨텍스트를 선택할 수 있습니다.')">컨텍스트 변경 ▾</div>
+    </div>
+
+    <div class="annotation">
+      <strong>기본 진입의 핵심</strong>: 평상시 반응 점검에서 발견한 시그널이 자연스럽게 매출 확인(DS#1) → 고객 프로파일 확인(DS#2)로 이어진다. 시스템 자동 선정 또는 사용자 직접 트리거 둘 다 가능하며, 모드 없이 시나리오 2(베스트셀러 발굴)와 동일한 흐름이 가능하다.
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>분석 이동 미리보기</h2>
+      <div class="modal-target" id="modal-target"></div>
+      <div class="modal-context">
+        <div class="label">이동 시 유지되는 컨텍스트</div>
+        <div class="ctx-row">대상: <strong id="modal-subject"></strong></div>
+        <div class="ctx-row">기간: <strong>2026-05-15 ~ 2026-05-21 (최근 7일)</strong></div>
+        <div class="ctx-row">비교 기준: <strong>평소 평균 / 전주 동기</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+        <button class="btn btn-go" onclick="closeModal(); alert('실제 서비스에서는 해당 DS 페이지로 이동합니다.')">이동</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-hint">데모: 각 → 버튼/카드 클릭 시 컨텍스트 미리보기</div>
+
+  <script>
+    const targetLabels = {
+      'ds1': 'DS#1 상품 성과 진단',
+      'ds2': 'DS#2 고객 프로파일 진단'
+    };
+    function openModal(subject, target, action) {
+      document.getElementById('modal-subject').textContent = subject;
+      document.getElementById('modal-target').textContent = '→ ' + targetLabels[target] + ' · ' + action;
+      document.getElementById('modal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

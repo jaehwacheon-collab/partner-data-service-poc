@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC8 - 부진 SKU 후기 진단</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #7c5dc4; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #7c5dc4; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #d4edda; border: 1px solid #5cb85c; border-radius: 4px; font-size: 12px; font-weight: 600; color: #1e7e34; }
+  .mode-badge { padding: 4px 10px; background: #ede7f6; border: 1px solid #7c5dc4; border-radius: 4px; font-size: 12px; font-weight: 600; color: #5b3fa0; margin-left: 8px; }
+
+  .efficiency-banner { background: #f3e8ff; border: 1px solid #c4a8e8; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #5b3fa0; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 16px; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.quality { background: #fdecea; border-color: #d9534f; }
+  .kpi.exposure { background: #e7f3ff; border-color: #2c5cf5; }
+  .kpi.option { background: #fff3cd; border-color: #ffc107; }
+  .kpi.unknown { background: #e7e8ea; border-color: #6c757d; }
+  .kpi-label { font-size: 12px; color: #444; font-weight: 600; }
+  .kpi-value { font-size: 28px; font-weight: bold; margin: 4px 0; }
+  .kpi-action { font-size: 11px; color: #666; margin-top: 6px; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+  .tag.quality { background: #fdecea; color: #d9534f; }
+  .tag.exposure { background: #e7f3ff; color: #2c5cf5; }
+  .tag.option { background: #fff3cd; color: #856404; }
+  .tag.unknown { background: #e7e8ea; color: #6c757d; }
+  .verdict { font-weight: 600; font-size: 12px; }
+  .verdict.clean { color: #d9534f; }
+  .verdict.keep-try { color: #2c5cf5; }
+  .verdict.option-fix { color: #856404; }
+  .verdict.investigate { color: #6c757d; }
+
+  .keyword-pill { display: inline-block; padding: 3px 10px; margin: 3px; border-radius: 20px; background: #fdecea; color: #d9534f; font-size: 12px; font-weight: 500; }
+
+  .diagnosis-card { padding: 18px; background: #ede7f6; border-left: 4px solid #7c5dc4; margin-bottom: 16px; border-radius: 4px; }
+  .diagnosis-card h3 { margin: 0 0 8px; font-size: 18px; color: #5b3fa0; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #ede7f6; border-left: 4px solid #7c5dc4; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #e7e8ea; border-left: 4px solid #6c757d; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 고객 반응 모니터링</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC8 :</b> 파트너는 부진 SKU의 부진 사유(품질 vs 노출 vs 옵션)를 후기 패턴으로 진단해 개선 vs 정리 의사결정을 내릴 수 있다.</div>
+  <div class="step-line"><b>Step 8</b> UC7 다음 액션에서 고객 반응 모니터링 진입 → <strong>부진 SKU 13개 자동 조회</strong></div>
+  <div class="step-line"><b>Step 9</b> 부진 사유 자동 분류 확인 → <strong>품질 4 / 노출 부족 5 / 옵션 이슈 2 / 미분류 2</strong></div>
+  <div class="step-line"><b>Step 10</b> 품질 부정 SKU 4개 상세 확인 → <strong>"사이즈 작다·원단 얇다·박음질"</strong> 키워드 빈도</div>
+  <div class="step-line"><b>Step 11</b> 노출 부족 SKU 5개 확인 → <strong>후기 0~3개 미만</strong>, 인지 부족</div>
+  <div class="step-line"><b>Step 12</b> 옵션 이슈 SKU 2개 확인 → <strong>특정 색상·사이즈만 부진</strong></div>
+  <div class="step-line"><b>Step 13</b> 진단: <strong>"정리 1 / 개선 시도 12 (마케팅·옵션·품질)"</strong></div>
+  <div class="step-line"><b>Step 14</b> 다음 분석: 고객 프로파일 진단으로 이동해 의사결정의 고객 영향 검증</div>
+</div>
+
+<div class="step-header">Step 8-14 · 부진 SKU 후기 진단</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>고객 반응 모니터링</b></div>
+    <div>
+      <span class="tier-badge">Basic 요금제</span>
+      <span class="mode-badge">📅 월간 라인업 리뷰 — 부진 진단</span>
+    </div>
+  </div>
+
+  <div class="efficiency-banner">
+    💡 <strong>부진 SKU 13개의 후기를 일일이 읽지 않아도 AI가 부진 사유를 자동 분류</strong>합니다. 13개 SKU × 30개 후기 = 390개 후기 자동 분석 완료.
+  </div>
+
+  <h4>부진 사유 자동 분류 (13개 SKU)</h4>
+  <div class="kpis">
+    <div class="kpi quality">
+      <div class="kpi-label">🔴 품질 이슈</div>
+      <div class="kpi-value" style="color:#d9534f;">4</div>
+      <div class="kpi-action">부정 키워드 빈도 높음<br>→ 품질 개선 또는 정리</div>
+    </div>
+    <div class="kpi exposure">
+      <div class="kpi-label">🔵 노출 부족</div>
+      <div class="kpi-value" style="color:#2c5cf5;">5</div>
+      <div class="kpi-action">후기 자체가 부족<br>→ 마케팅·노출 강화 시도</div>
+    </div>
+    <div class="kpi option">
+      <div class="kpi-label">🟡 옵션 이슈</div>
+      <div class="kpi-value" style="color:#856404;">2</div>
+      <div class="kpi-action">특정 옵션만 부진<br>→ 부진 옵션 정리·인기 옵션 유지</div>
+    </div>
+    <div class="kpi unknown">
+      <div class="kpi-label">⚪ 진단 불가</div>
+      <div class="kpi-value" style="color:#6c757d;">2</div>
+      <div class="kpi-action">데이터 부족<br>→ 추가 조사 필요</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">부진 SKU 13개 자동 분류 결과</h4>
+  <table>
+    <tr><th>#</th><th>SKU</th><th>매출 (지난달)</th><th>후기 수</th><th>평균 별점</th><th>주요 신호</th><th>분류</th><th>1차 진단</th></tr>
+    <tr><td>1</td><td>코어 트레이닝 팬츠 (BLK-L)</td><td>₩2M</td><td>34</td><td>★2.8</td><td><span class="keyword-pill">사이즈 작다</span><span class="keyword-pill">원단 얇다</span></td><td><span class="tag quality">품질</span></td><td class="verdict clean">즉시 정리 검토</td></tr>
+    <tr><td>2</td><td>러닝 컴프레션 티 (그레이)</td><td>₩1.8M</td><td>28</td><td>★3.0</td><td><span class="keyword-pill">박음질</span><span class="keyword-pill">사이즈 작다</span></td><td><span class="tag quality">품질</span></td><td class="verdict keep-try">사이즈 가이드 + 검수</td></tr>
+    <tr><td>3</td><td>스트레치 데님 팬츠 (인디고)</td><td>₩1.5M</td><td>22</td><td>★2.9</td><td><span class="keyword-pill">사이즈</span><span class="keyword-pill">핏 어색</span></td><td><span class="tag quality">품질</span></td><td class="verdict keep-try">옵션 변경 + 검수</td></tr>
+    <tr><td>4</td><td>오버사이즈 후드 (베이지)</td><td>₩1.2M</td><td>18</td><td>★2.7</td><td><span class="keyword-pill">색상 다르다</span><span class="keyword-pill">두께</span></td><td><span class="tag quality">품질</span></td><td class="verdict keep-try">상세 검수</td></tr>
+    <tr><td>5</td><td>퀵 드라이 티셔츠 (블랙)</td><td>₩1M</td><td>2</td><td>★4.5</td><td>후기 부족</td><td><span class="tag exposure">노출 부족</span></td><td class="verdict keep-try">마케팅 강화</td></tr>
+    <tr><td>6</td><td>테크 자켓 (네이비)</td><td>₩900K</td><td>1</td><td>★5.0</td><td>후기 부족</td><td><span class="tag exposure">노출 부족</span></td><td class="verdict keep-try">마케팅 강화</td></tr>
+    <tr><td>7</td><td>러닝 쇼츠 (블랙)</td><td>₩800K</td><td>3</td><td>★4.3</td><td>후기 부족</td><td><span class="tag exposure">노출 부족</span></td><td class="verdict keep-try">마케팅 강화</td></tr>
+    <tr><td>8</td><td>윈드 베스트 (그레이)</td><td>₩700K</td><td>0</td><td>—</td><td>후기 없음</td><td><span class="tag exposure">노출 부족</span></td><td class="verdict keep-try">마케팅 강화</td></tr>
+    <tr><td>9</td><td>레이어드 티 (화이트)</td><td>₩600K</td><td>2</td><td>★4.0</td><td>후기 부족</td><td><span class="tag exposure">노출 부족</span></td><td class="verdict keep-try">마케팅 강화</td></tr>
+    <tr><td>10</td><td>트레이닝 자켓 (멀티색상)</td><td>₩1.5M</td><td>40</td><td>★4.2</td><td><span class="keyword-pill">블랙만 부정</span></td><td><span class="tag option">옵션</span></td><td class="verdict option-fix">블랙 정리, 화이트 유지</td></tr>
+    <tr><td>11</td><td>슬림 팬츠 (멀티사이즈)</td><td>₩1.3M</td><td>32</td><td>★4.0</td><td><span class="keyword-pill">S·M 사이즈 작다</span></td><td><span class="tag option">옵션</span></td><td class="verdict option-fix">S 정리, M 사이즈 보강</td></tr>
+    <tr><td>12</td><td>크롭 후드 (베이지)</td><td>₩500K</td><td>5</td><td>★4.0</td><td>데이터 부족</td><td><span class="tag unknown">미분류</span></td><td class="verdict investigate">추가 조사</td></tr>
+    <tr><td>13</td><td>플리스 베스트 (블루)</td><td>₩400K</td><td>4</td><td>★3.8</td><td>혼재</td><td><span class="tag unknown">미분류</span></td><td class="verdict investigate">추가 조사</td></tr>
+  </table>
+
+  <h4 style="margin-top:24px;">품질 이슈 4개 SKU 부정 키워드 분석</h4>
+  <div class="chart-wrap">
+    <div style="font-size:13px; margin-bottom:12px;">4개 품질 이슈 SKU의 부정 키워드를 통합 분석 → 공통 원인 파악</div>
+    <svg width="100%" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="170" x2="780" y2="170" stroke="#aaa"/>
+      <line x1="60" y1="20" x2="60" y2="170" stroke="#aaa"/>
+      <text x="50" y="174" font-size="11" fill="#888" text-anchor="end">0</text>
+      <text x="50" y="125" font-size="11" fill="#888" text-anchor="end">10</text>
+      <text x="50" y="75" font-size="11" fill="#888" text-anchor="end">20</text>
+      <text x="50" y="25" font-size="11" fill="#888" text-anchor="end">30회</text>
+
+      <!-- 사이즈 작다: 28회 -->
+      <rect x="100" y="30" width="60" height="140" fill="#d9534f"/>
+      <text x="130" y="195" font-size="12" text-anchor="middle" font-weight="bold">사이즈 작다</text>
+      <text x="130" y="22" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">28회</text>
+
+      <!-- 원단 얇다: 18회 -->
+      <rect x="220" y="80" width="60" height="90" fill="#e08a82"/>
+      <text x="250" y="195" font-size="12" text-anchor="middle" font-weight="bold">원단 얇다</text>
+      <text x="250" y="72" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">18회</text>
+
+      <!-- 박음질: 12회 -->
+      <rect x="340" y="110" width="60" height="60" fill="#f0a070"/>
+      <text x="370" y="195" font-size="12" text-anchor="middle" font-weight="bold">박음질</text>
+      <text x="370" y="102" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">12회</text>
+
+      <!-- 색상 다르다: 8회 -->
+      <rect x="460" y="130" width="60" height="40" fill="#f5c099"/>
+      <text x="490" y="195" font-size="12" text-anchor="middle" font-weight="bold">색상</text>
+      <text x="490" y="122" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">8회</text>
+
+      <!-- 핏 어색: 6회 -->
+      <rect x="580" y="140" width="60" height="30" fill="#f8dabe"/>
+      <text x="610" y="195" font-size="12" text-anchor="middle" font-weight="bold">핏</text>
+      <text x="610" y="132" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">6회</text>
+
+      <!-- 두께: 4회 -->
+      <rect x="700" y="150" width="60" height="20" fill="#f8dabe"/>
+      <text x="730" y="195" font-size="12" text-anchor="middle" font-weight="bold">두께</text>
+      <text x="730" y="142" font-size="12" text-anchor="middle" fill="#d9534f" font-weight="bold">4회</text>
+    </svg>
+    <div style="margin-top:10px; font-size:12px; color:#d9534f; font-weight:600; padding:10px 14px; background:#fdecea; border-radius:4px;">
+      ⚠️ <strong>"사이즈 작다" 28회 압도적</strong> → 사이즈 표기 재검토·가이드 강화 필요. MD·QA팀 공유 자동.
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 요약</h4>
+  <div class="diagnosis-card">
+    <h3>🔍 13개 부진 SKU 사유 진단 완료</h3>
+    <b>품질 4 (즉시 정리 1 + 개선 시도 3) / 노출 5 (마케팅 강화) / 옵션 2 (부진 옵션 정리) / 미분류 2 (조사)</b><br>
+    <strong>처리 방향: 정리 1 / 개선 시도 12 (마케팅 5 + 옵션 변경 2 + 품질 개선 3 + 조사 2)</strong><br>
+    <span style="font-size:12px; color:#666;">→ 다음 단계: 의사결정의 고객 영향(충성 고객 이탈 위험 + 강화 후보 잠재 시장) 검증</span>
+  </div>
+
+  <h4>🔗 다음 액션 검토 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 14)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary">
+      <b>📊 다음 분석: 고객 프로파일 진단</b>
+      라인업 재편 결정의 고객 영향 검증<br>(충성 고객 이탈 + 잠재 시장)
+    </div>
+    <div class="action-card secondary">
+      <b>🛠️ MD·QA팀 공유</b>
+      품질 이슈 4개 SKU "사이즈 작다" 28회<br>즉시 검수 요청 (Slack 자동 발송)
+    </div>
+    <div class="action-card tertiary">
+      <b>📁 진단 리포트 다운로드</b>
+      13개 SKU 사유·진단 자동 정리<br>(MD 보고용)
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

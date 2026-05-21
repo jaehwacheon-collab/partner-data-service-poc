@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC6 - 노출·매출 증폭</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #5cb85c; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #5cb85c; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+  .product-info { padding: 12px 16px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; margin-bottom: 16px; font-size: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.good-highlight { background: #e8f5e9; border-color: #5cb85c; }
+  .kpi.warn-highlight { background: #fff3cd; border-color: #ffc107; }
+  .kpi-label { font-size: 12px; color: #666; }
+  .kpi-value { font-size: 22px; font-weight: bold; margin: 4px 0; }
+  .kpi-value.good { color: #1e7e34; }
+  .kpi-value.warn { color: #856404; }
+  .kpi-value.small { font-size: 16px; }
+  .kpi-change { font-size: 12px; }
+  .kpi-change.up { color: #1e7e34; font-weight: 600; }
+  .kpi-change.warn { color: #856404; font-weight: 600; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  .chart-title { font-size: 13px; color: #444; margin-bottom: 8px; font-weight: 600; }
+  .chart-legend { display: flex; gap: 16px; font-size: 12px; color: #555; margin-top: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-color { width: 16px; height: 14px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  td.warn { color: #d9534f; font-weight: 600; }
+
+  /* 퍼널 세로 막대 */
+  .funnel-stage rect { transition: opacity 0.15s; }
+
+  /* Peer 랭킹 */
+  .rank-vis { position: relative; height: 80px; background: #fafbfd; border: 1px solid #e1e6ee; border-radius: 4px; padding: 30px 20px; margin-bottom: 12px; }
+  .rank-track { height: 6px; background: linear-gradient(to right, #5cb85c 0%, #ffc107 30%, #d9534f 100%); border-radius: 3px; position: relative; }
+  .rank-mark { position: absolute; top: -10px; width: 24px; height: 24px; border-radius: 50%; background: white; border: 3px solid #888; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+  .rank-mark.current { border-color: #1e7e34; background: #1e7e34; color: white; }
+  .rank-mark.prev { border-color: #aaa; background: #f0f0f0; color: #666; }
+  .rank-mark.target { border-color: #ffc107; background: #fff3cd; color: #856404; border-style: dashed; }
+  .rank-labels { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 8px; }
+
+  .diagnosis-card { padding: 18px; background: #e8f5e9; border-left: 4px solid #1e7e34; margin-bottom: 16px; border-radius: 4px; }
+  .diagnosis-card h3 { margin: 0 0 8px; font-size: 18px; color: #1e7e34; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #d4edda; border-left: 4px solid #5cb85c; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #fff3cd; border-left: 4px solid #ffc107; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 상품 성과 진단</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC6 :</b> 파트너는 베스트셀러 후보를 정밀 부스팅(마케팅·재고·가격·옵션) 액션으로 매출을 가속화할 수 있다.</div>
+  <div class="step-line"><b>Step 14</b> UC5 다음 액션에서 상품 성과 진단 진입 → 같은 상품 자동 조회</div>
+  <div class="step-line"><b>Step 15</b> 매출·판매수량 추이 확인 → <strong>5/15 출시 후 일평균 +250% 폭증</strong></div>
+  <div class="step-line"><b>Step 16</b> 퍼널 추이 확인 → <strong>노출 +180% / CTR +30% / 구매전환율 +15%</strong> (퍼널 전 단계 동반 상승, 건강한 성장)</div>
+  <div class="step-line"><b>Step 17</b> 🔍 <strong>20대 여성 세그먼트 퍼널 검증</strong> → 노출 자사 12%(평균 22%), 구매 자사 25%(평균 22%) → <strong>"노출은 적은데 보는 사람의 전환은 평균 이상" → 잠재 시장 확정 + 마케팅 노출 강화 효과 큼</strong></div>
+  <div class="step-line"><b>Step 18</b> Peer 카테고리 내 랭킹 변동 확인 → <strong>45위 → 12위 급상승, Top 10 진입 임박</strong> (진입 시 무신사 자체 추천·검색 가중치 가속)</div>
+  <div class="step-line"><b>Step 19</b> 옵션별 재고 분석 → <strong>인기 사이즈 M·L 재고 1주분 부족 위험</strong></div>
+  <div class="step-line"><b>Step 20</b> 진단: <strong>"베스트셀러 굳히기 황금 시점. 부스팅 패키지 즉시 실행"</strong></div>
+  <div class="step-line"><b>Step 21</b> 부스팅 패키지 <strong>6가지 액션</strong> 도출: 마케팅 노출 / Top 10 가속화 / 재고 보충 / 가격 유지 / 옵션 확장 / 잠재 고객 CRM</div>
+</div>
+
+<div class="step-header">Step 14-20 · 상품 성과 진단 + 매출 증폭 액션</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>상품 성과 진단</b></div>
+    <div class="tier-badge">Standard 요금제</div>
+  </div>
+
+  <div class="product-info">
+    <b>에어로 라이트 윈드 자켓</b> · UID 1238901 · 🆕 신상품 (5/15 출시) · <span style="color:#888; font-size:12px;">UC5(고객 프로파일 진단)에서 자동 조회됨</span>
+  </div>
+
+  <h4>핵심 지표</h4>
+  <div class="kpis">
+    <div class="kpi good-highlight">
+      <div class="kpi-label">일평균 GMV</div>
+      <div class="kpi-value good">+250%</div>
+      <div class="kpi-change up">▲ ₩2M → ₩7M/일</div>
+    </div>
+    <div class="kpi good-highlight">
+      <div class="kpi-label">구매전환율</div>
+      <div class="kpi-value good">3.2%</div>
+      <div class="kpi-change up">▲ +15% (2.8 → 3.2)</div>
+    </div>
+    <div class="kpi good-highlight">
+      <div class="kpi-label">Peer 랭킹</div>
+      <div class="kpi-value good">12위</div>
+      <div class="kpi-change up">▲ 45 → 12위, Top 10 임박</div>
+    </div>
+    <div class="kpi warn-highlight">
+      <div class="kpi-label">⚠️ 재고 위험</div>
+      <div class="kpi-value warn small">M·L 1주분</div>
+      <div class="kpi-change warn">부족 위험</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">일별 GMV·판매수량 추이 (Basic Layer)</h4>
+  <div class="chart-wrap">
+    <svg width="100%" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+      <line x1="60" y1="20" x2="780" y2="20" stroke="#eee"/><line x1="60" y1="65" x2="780" y2="65" stroke="#eee"/><line x1="60" y1="110" x2="780" y2="110" stroke="#eee"/><line x1="60" y1="155" x2="780" y2="155" stroke="#eee"/><line x1="60" y1="200" x2="780" y2="200" stroke="#aaa"/><line x1="60" y1="20" x2="60" y2="200" stroke="#aaa"/>
+      <text x="50" y="204" font-size="11" fill="#888" text-anchor="end">0</text><text x="50" y="24" font-size="11" fill="#888" text-anchor="end">10M</text>
+      <text x="100" y="220" font-size="10" fill="#666" text-anchor="middle">5/06</text><text x="300" y="220" font-size="10" fill="#666" text-anchor="middle">5/10</text><text x="500" y="220" font-size="10" fill="#666" text-anchor="middle">5/14</text><text x="550" y="220" font-size="10" fill="#1e7e34" text-anchor="middle" font-weight="bold">5/15</text><text x="750" y="220" font-size="10" fill="#666" text-anchor="middle">5/19</text>
+      <line x1="550" y1="20" x2="550" y2="200" stroke="#1e7e34" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+      <text x="555" y="35" font-size="11" fill="#1e7e34" font-weight="bold">5/15 출시 → 매출 폭증</text>
+      <polygon points="100,165 150,168 200,165 250,170 300,165 350,168 400,165 450,168 500,165 550,128 600,92 650,72 700,52 750,35 750,200 100,200" fill="#1e7e34" opacity="0.15"/>
+      <polyline points="100,165 150,168 200,165 250,170 300,165 350,168 400,165 450,168 500,165 550,128 600,92 650,72 700,52 750,35" stroke="#1e7e34" stroke-width="3" fill="none"/>
+      <circle cx="550" cy="128" r="4" fill="#1e7e34"/><circle cx="600" cy="92" r="3" fill="#1e7e34"/><circle cx="650" cy="72" r="3" fill="#1e7e34"/><circle cx="700" cy="52" r="3" fill="#1e7e34"/><circle cx="750" cy="35" r="4" fill="#1e7e34"/>
+      <text x="100" y="158" font-size="11" fill="#666">₩2M</text>
+      <text x="755" y="35" font-size="11" fill="#1e7e34" font-weight="bold">₩7M</text>
+    </svg>
+    <div style="margin-top:10px; font-size:12px; color:#1e7e34; font-weight:600;">🔥 5/15 출시 후 일평균 GMV +250% 폭증 — 매출 가속화 중</div>
+  </div>
+
+  <h4 style="margin-top:24px;">퍼널 전 단계 동반 상승 (Deep Layer) — 건강한 입소문 패턴</h4>
+  <div class="chart-wrap">
+    <svg width="100%" viewBox="0 0 800 280" preserveAspectRatio="xMidYMid meet">
+      <line x1="20" y1="220" x2="780" y2="220" stroke="#aaa"/>
+      <!-- 그룹 1: 노출 -->
+      <rect x="80" y="120" width="40" height="100" fill="#bbb"/>
+      <text x="100" y="115" font-size="11" text-anchor="middle" fill="#666">8.5K</text>
+      <rect x="130" y="55" width="40" height="165" fill="#5cb85c"/>
+      <text x="150" y="50" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">24K</text>
+      <text x="125" y="245" font-size="13" text-anchor="middle" font-weight="bold">노출</text>
+      <text x="125" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">▲ +180%</text>
+      <!-- 그룹 2: 클릭 (CTR) -->
+      <rect x="280" y="135" width="40" height="85" fill="#bbb"/>
+      <text x="300" y="130" font-size="11" text-anchor="middle" fill="#666">CTR 6.5%</text>
+      <rect x="330" y="80" width="40" height="140" fill="#5cb85c"/>
+      <text x="350" y="75" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">CTR 8.5%</text>
+      <text x="325" y="245" font-size="13" text-anchor="middle" font-weight="bold">클릭</text>
+      <text x="325" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">▲ CTR +30%</text>
+      <!-- 그룹 3: 장바구니 -->
+      <rect x="480" y="140" width="40" height="80" fill="#bbb"/>
+      <text x="500" y="135" font-size="11" text-anchor="middle" fill="#666">12%</text>
+      <rect x="530" y="100" width="40" height="120" fill="#5cb85c"/>
+      <text x="550" y="95" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">15%</text>
+      <text x="525" y="245" font-size="13" text-anchor="middle" font-weight="bold">장바구니</text>
+      <text x="525" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">▲ 전환율 +25%</text>
+      <!-- 그룹 4: 구매 -->
+      <rect x="680" y="160" width="40" height="60" fill="#bbb"/>
+      <text x="700" y="155" font-size="11" text-anchor="middle" fill="#666">2.8%</text>
+      <rect x="730" y="135" width="40" height="85" fill="#1e7e34"/>
+      <text x="750" y="130" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">3.2%</text>
+      <text x="725" y="245" font-size="13" text-anchor="middle" font-weight="bold">구매</text>
+      <text x="725" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">▲ 전환율 +15%</text>
+    </svg>
+    <div class="chart-legend" style="justify-content:center;">
+      <div class="legend-item"><div class="legend-color" style="background:#bbb; width:14px; height:14px;"></div> 전월</div>
+      <div class="legend-item"><div class="legend-color" style="background:#5cb85c; width:14px; height:14px;"></div> 금주 (입소문 후)</div>
+    </div>
+    <div style="margin-top:10px; font-size:12px; color:#1e7e34; font-weight:600; padding:8px 12px; background:#e8f5e9; border-radius:4px;">
+      ✓ 퍼널 전 단계가 동반 상승 = "건강한 입소문". 단순 광고 노출보다 자연 유입이 더 큼.
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">🔍 20대 여성 세그먼트 퍼널 검증 <span style="font-size:12px; font-weight:normal; color:#666;">(UC5 갭의 정체 — 잠재 시장 vs 경쟁력 부족)</span></h4>
+  <div style="font-size:12px; color:#856404; margin-bottom:12px; padding:10px 14px; background:#fff3cd; border-radius:4px;">
+    💡 UC5에서 발견한 <b>20대 여성 카테고리 갭 +10%p</b>가 진짜 잠재 시장인지 검증. 입소문 일어난 상품의 20대 여성 노출·클릭·구매 비중을 분리해서 어디서 어떻게 반응하는지 확인.
+  </div>
+  <div class="chart-wrap">
+    <svg width="100%" viewBox="0 0 800 260" preserveAspectRatio="xMidYMid meet">
+      <line x1="20" y1="220" x2="780" y2="220" stroke="#aaa"/>
+      <text x="80" y="245" font-size="13" text-anchor="middle" font-weight="bold">노출</text>
+      <text x="80" y="262" font-size="11" text-anchor="middle" fill="#856404" font-weight="bold">12% vs 22%</text>
+      <text x="280" y="245" font-size="13" text-anchor="middle" font-weight="bold">클릭</text>
+      <text x="280" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">15% vs 21%</text>
+      <text x="480" y="245" font-size="13" text-anchor="middle" font-weight="bold">장바구니</text>
+      <text x="480" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">20% vs 20%</text>
+      <text x="680" y="245" font-size="13" text-anchor="middle" font-weight="bold">구매</text>
+      <text x="680" y="262" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">25% vs 22%</text>
+
+      <!-- 노출 (자사 노출 적음) -->
+      <rect x="40" y="50" width="40" height="170" fill="#aaa"/>
+      <text x="60" y="45" font-size="11" text-anchor="middle" fill="#666">22%</text>
+      <rect x="90" y="127" width="40" height="93" fill="#e08a82"/>
+      <text x="110" y="122" font-size="11" text-anchor="middle" fill="#856404" font-weight="bold">12%</text>
+
+      <!-- 클릭 -->
+      <rect x="240" y="58" width="40" height="162" fill="#aaa"/>
+      <text x="260" y="53" font-size="11" text-anchor="middle" fill="#666">21%</text>
+      <rect x="290" y="105" width="40" height="115" fill="#f0a070"/>
+      <text x="310" y="100" font-size="11" text-anchor="middle" fill="#856404" font-weight="bold">15%</text>
+
+      <!-- 장바구니 -->
+      <rect x="440" y="65" width="40" height="155" fill="#aaa"/>
+      <text x="460" y="60" font-size="11" text-anchor="middle" fill="#666">20%</text>
+      <rect x="490" y="65" width="40" height="155" fill="#1e7e34"/>
+      <text x="510" y="60" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">20%</text>
+
+      <!-- 구매 (자사 구매 높음 - 입소문 효과) -->
+      <rect x="640" y="50" width="40" height="170" fill="#aaa"/>
+      <text x="660" y="45" font-size="11" text-anchor="middle" fill="#666">22%</text>
+      <rect x="690" y="27" width="40" height="193" fill="#1e7e34"/>
+      <text x="710" y="22" font-size="11" text-anchor="middle" fill="#1e7e34" font-weight="bold">25%</text>
+    </svg>
+    <div class="chart-legend" style="justify-content:center;">
+      <div class="legend-item"><div class="legend-color" style="background:#aaa; width:14px; height:14px;"></div> 카테고리 평균 (스포츠웨어 자켓)</div>
+      <div class="legend-item"><div class="legend-color" style="background:#1e7e34; width:14px; height:14px;"></div> 자사 (입소문 상품)</div>
+    </div>
+    <div style="margin-top:14px; font-size:13px; color:#1e7e34; font-weight:600; padding:12px 14px; background:#e8f5e9; border-radius:4px;">
+      ✅ <strong>잠재 시장 확정 — 노출만 늘리면 매출 큰 폭 증폭 가능</strong><br>
+      • <b>노출 단계</b>: 자사 12% vs 평균 22% → <b>노출 자체가 부족 ⚠️</b><br>
+      • <b>클릭 단계</b>: 자사 15% vs 평균 21% → 노출 적은 만큼 클릭도 적음<br>
+      • <b>장바구니·구매 단계</b>: 자사 20%·25% vs 평균 20%·22% → <strong>도달한 사람들의 전환은 평균 이상</strong> (입소문 효과)<br>
+      → <strong>"한 번 본 20대 여성은 잘 사는데, 보는 사람이 적다"</strong>. 노출만 늘리면 매출 큰 폭 확장 가능 → <b>마케팅 노출 강화 액션의 정당성 확인</b>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">Peer Group 내 자사 상품 랭킹 변동 (Market Layer)</h4>
+  <div class="chart-wrap">
+    <div class="rank-vis">
+      <div class="rank-track">
+        <!-- 0 ~ 100위 → 0% ~ 100% -->
+        <div class="rank-mark prev" style="left:43%;">45</div>
+        <div class="rank-mark current" style="left:10%;">12</div>
+        <div class="rank-mark target" style="left:8%;">Top 10</div>
+      </div>
+      <div class="rank-labels"><span>1위</span><span>20위</span><span>40위</span><span>60위</span><span>80위</span><span>100위+</span></div>
+    </div>
+    <div style="margin-top:10px; font-size:13px; color:#1e7e34; font-weight:600; padding:10px 14px; background:#e8f5e9; border-radius:4px;">
+      🚀 <strong>5/15 이후 45위 → 12위 (Top 10 진입 임박)</strong> · Peer 카테고리: 스포츠웨어 자켓 · Top 10 진입 시 무신사 노출 가속화 효과 ↑
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">옵션별 재고·판매 분석 ⚠️</h4>
+  <div class="chart-wrap" style="padding:0;">
+    <table>
+      <tr><th>옵션</th><th>일평균 판매</th><th>현재 재고</th><th>예상 소진</th><th>위험도</th></tr>
+      <tr><td>색상: 블랙 · 사이즈 S</td><td>4</td><td>120</td><td>30일</td><td>안전</td></tr>
+      <tr style="background:#fff3cd;"><td><b>색상: 블랙 · 사이즈 M 🔥</b></td><td><b>18</b></td><td><b>120</b></td><td class="warn"><b>약 1주</b></td><td class="warn"><b>⚠️ 부족 위험</b></td></tr>
+      <tr style="background:#fff3cd;"><td><b>색상: 블랙 · 사이즈 L 🔥</b></td><td><b>15</b></td><td><b>110</b></td><td class="warn"><b>약 1주</b></td><td class="warn"><b>⚠️ 부족 위험</b></td></tr>
+      <tr><td>색상: 블랙 · 사이즈 XL</td><td>5</td><td>95</td><td>19일</td><td>안전</td></tr>
+      <tr><td>색상: 네이비 · 사이즈 M</td><td>8</td><td>140</td><td>17일</td><td>안전</td></tr>
+      <tr><td>색상: 네이비 · 사이즈 L</td><td>6</td><td>130</td><td>21일</td><td>안전</td></tr>
+    </table>
+    <div style="margin-top:10px; font-size:12px; color:#856404; font-weight:600; padding:10px 14px; background:#fff3cd; border-radius:4px;">
+      ⚠️ <strong>블랙 M·L 사이즈</strong>는 1주 내 품절 위험. 입소문 폭주 시점에 재고 부족하면 매출 기회 손실 → 즉시 재고 보충 필요
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 결과</h4>
+  <div class="diagnosis-card">
+    <h3>🚀 베스트셀러 굳히기 — 부스팅 패키지 즉시 실행</h3>
+    <b>에어로 라이트 윈드 자켓 · 매출 +250% 폭증</b><br>
+    <strong>입소문 + 퍼널 동반 상승 + Peer Top 10 진입 임박 = 베스트셀러 굳히기 황금 시점</strong><br>
+    <strong style="color:#856404;">단, 인기 사이즈 M·L 재고 1주분 부족 위험 (조기 대응 필요)</strong><br>
+    <span style="font-size:12px; color:#666;">→ 마케팅·재고·가격·옵션·CRM 종합 부스팅으로 베스트셀러 굳히기</span>
+  </div>
+
+  <h4>🔗 부스팅 패키지 — 6가지 액션 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 20)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary">
+      <b>📈 마케팅 노출 강화</b>
+      DA 광고 · 기획전 · 검색 광고 구좌 신청<br>(전사 캠페인 연계)
+    </div>
+    <div class="action-card primary">
+      <b>🚀 Peer Top 10 진입 가속화</b>
+      현재 12위 → Top 10 진입 시<br>무신사 자체 추천·검색 가중치 효과 ↑
+    </div>
+    <div class="action-card secondary">
+      <b>🛠️ 인기 옵션(M·L) 재고 보충</b>
+      1주분 부족 위험 해소<br>즉시 발주 진행
+    </div>
+    <div class="action-card secondary">
+      <b>💰 가격 전략 (정가 유지)</b>
+      입소문 시점에 할인 X<br>마진 확보 + 브랜드 가치 유지
+    </div>
+    <div class="action-card tertiary">
+      <b>🎨 옵션 라인업 확장</b>
+      인기 옵션의 색상·사이즈 추가 발주<br>(시즌 후속 기획 연계)
+    </div>
+    <div class="action-card tertiary">
+      <b>📨 20대 여성 잠재 고객 CRM</b>
+      UC5에서 식별한 +10%p 갭 대상<br>입소문 캠페인 메시지 발송
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

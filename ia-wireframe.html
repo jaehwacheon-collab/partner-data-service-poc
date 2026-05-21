@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>팀무신사 인사이트 IA (Information Architecture)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", sans-serif; margin: 0; padding: 40px; background: #f5f6f8; color: #1a1a1a; }
+  .container { max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+  .section { background: white; border-radius: 12px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .section h2 { font-size: 20px; margin: 0 0 20px; color: #111; }
+  .section h3 { font-size: 15px; margin: 24px 0 12px; color: #333; }
+
+  /* IA Diagram */
+  .ia-diagram { display: flex; flex-direction: column; gap: 16px; }
+  .layer { border: 2px solid #e0e3e8; border-radius: 10px; padding: 20px; background: #fafbfc; position: relative; }
+  .layer-label { position: absolute; top: -10px; left: 16px; background: #1a1a1a; color: white; font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 600; }
+  .layer-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #111; }
+  .layer-1 { background: #f0f7ff; border-color: #b8d9ff; }
+  .layer-2 { background: #f7f0ff; border-color: #d9b8ff; }
+  .layer-3 { background: #fff7f0; border-color: #ffd9b8; }
+
+  .entry-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .entry-card { background: white; border: 1.5px solid #d0d5dc; border-radius: 8px; padding: 16px; }
+  .entry-card .title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #111; }
+  .entry-card .desc { font-size: 12px; color: #555; line-height: 1.6; }
+  .entry-card.mode .title { color: #5a2ec4; }
+  .entry-card.free .title { color: #1e6bd9; }
+  .mode-list { font-size: 12px; color: #444; line-height: 1.8; margin-top: 8px; }
+
+  .ds-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; position: relative; }
+  .ds-card { background: white; border: 1.5px solid #c9b8ff; border-radius: 8px; padding: 16px; text-align: center; }
+  .ds-card .ds-num { font-size: 12px; font-weight: 600; color: #5a2ec4; margin-bottom: 6px; }
+  .ds-card .ds-name { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .ds-card .ds-desc { font-size: 12px; color: #555; line-height: 1.5; }
+  .ds-arrow { text-align: center; color: #5a2ec4; font-size: 11px; margin-top: 10px; font-weight: 600; }
+
+  .tier-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .tier-card { background: white; border: 1.5px solid #ffc9a3; border-radius: 8px; padding: 14px; }
+  .tier-card .tier-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .tier-card .tier-tier { font-size: 11px; color: #d97706; margin-bottom: 8px; font-weight: 600; }
+  .tier-card .tier-desc { font-size: 12px; color: #555; line-height: 1.5; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f0f2f5; padding: 12px 14px; text-align: left; font-weight: 600; border-bottom: 2px solid #d0d5dc; }
+  td { padding: 12px 14px; border-bottom: 1px solid #e8eaed; vertical-align: top; }
+  tr:hover { background: #fafbfc; }
+  .tier-basic { color: #1e6bd9; font-weight: 600; }
+  .tier-standard { color: #d97706; font-weight: 600; }
+  .ds-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .ds1 { background: #fef3c7; color: #92400e; }
+  .ds2 { background: #ddd6fe; color: #5b21b6; }
+  .ds3 { background: #d1fae5; color: #065f46; }
+
+  /* Defense msg */
+  .defense { background: #fff8e1; border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 6px; margin-top: 12px; }
+  .defense .q { font-weight: 700; color: #92400e; font-size: 13px; margin-bottom: 4px; }
+  .defense .a { font-size: 13px; color: #444; line-height: 1.6; }
+  .defense + .defense { margin-top: 10px; }
+
+  /* Flow example */
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; background: #f0f7ff; border-radius: 8px; font-size: 13px; }
+  .flow-step { background: white; border: 1.5px solid #b8d9ff; border-radius: 6px; padding: 8px 12px; }
+  .flow-arrow { color: #1e6bd9; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>팀무신사 인사이트 IA</h1>
+  <p class="subtitle">3-Layer 정보 구조: 진입점 + 기본 페이지(DS) + 데이터 깊이(Tier)</p>
+
+  <!-- IA Diagram -->
+  <div class="section">
+    <h2>1. IA 구조도</h2>
+    <div class="ia-diagram">
+      <!-- Layer 1: Entry -->
+      <div class="layer layer-1">
+        <span class="layer-label">LAYER 1</span>
+        <div class="layer-title">진입점 (Entry Points)</div>
+        <div class="entry-row">
+          <div class="entry-card free">
+            <div class="title">기본 진입: 홈/대시보드 (자유 탐색)</div>
+            <div class="desc">사용자가 직접 DS 페이지로 진입, 드릴스루로 자유 이동</div>
+          </div>
+          <div class="entry-card mode">
+            <div class="title">모드 진입: 워크플로우 (가이드)</div>
+            <div class="mode-list">
+              · 매출 부진 진단 360°<br>
+              · 베스트셀러 발굴 360°<br>
+              · 라인업 정리 360°<br>
+              · 신상품 사전 의사결정 360°
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 2: DS Pages -->
+      <div class="layer layer-2">
+        <span class="layer-label">LAYER 2</span>
+        <div class="layer-title">기본 페이지 (Base Pages, DS 단위)</div>
+        <div class="ds-row">
+          <div class="ds-card">
+            <div class="ds-num">DS#1</div>
+            <div class="ds-name">상품 성과 진단</div>
+            <div class="ds-desc">매출·판매량·재고 추이, 부진/베스트 탐지, 시뮬레이션</div>
+          </div>
+          <div class="ds-card">
+            <div class="ds-num">DS#2</div>
+            <div class="ds-name">고객 프로파일 진단</div>
+            <div class="ds-desc">구매 고객 인구통계, 세그먼트, 카테고리 비교</div>
+          </div>
+          <div class="ds-card">
+            <div class="ds-num">DS#3</div>
+            <div class="ds-name">고객 반응 모니터링</div>
+            <div class="ds-desc">노출·클릭·장바구니·구매 퍼널, 리뷰, 행동 시그널</div>
+          </div>
+        </div>
+        <div class="ds-arrow">◄─── 드릴스루 / 다음 액션 카드로 DS간 자유 이동 ───►</div>
+      </div>
+
+      <!-- Layer 3: Tier -->
+      <div class="layer layer-3">
+        <span class="layer-label">LAYER 3</span>
+        <div class="layer-title">데이터 깊이 (Tier별 차등)</div>
+        <div class="tier-row">
+          <div class="tier-card">
+            <div class="tier-name">Basic Layer</div>
+            <div class="tier-tier">Basic 요금제</div>
+            <div class="tier-desc">기본 지표, 자사 단일 데이터 (매출, 판매량, 노출/클릭)</div>
+          </div>
+          <div class="tier-card">
+            <div class="tier-name">Deep Layer</div>
+            <div class="tier-tier">Standard 요금제</div>
+            <div class="tier-desc">카테고리 평균 비교, 세그먼트 퍼널, 시뮬레이션</div>
+          </div>
+          <div class="tier-card">
+            <div class="tier-name">Market Layer</div>
+            <div class="tier-tier">Premium 요금제</div>
+            <div class="tier-desc">시장 트렌드, 경쟁사 벤치마크, 키워드/검색 인사이트</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry comparison -->
+  <div class="section">
+    <h2>2. 기본 진입 vs 모드 진입</h2>
+    <table>
+      <thead>
+        <tr><th style="width: 20%;">구분</th><th>기본 진입</th><th>모드 진입</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>컨텍스트</td><td>사용자가 선택 (상품/기간/세그먼트)</td><td>자동 채움 (워크플로우 시작 시점에 결정)</td></tr>
+        <tr><td>페이지 순서</td><td>자유 (드릴스루로 이동)</td><td>시나리오대로 가이드</td></tr>
+        <tr><td>사용 시점</td><td>평상시 탐색, 정기 점검</td><td>특정 의사결정 필요 시</td></tr>
+        <tr><td>페이지 실체</td><td>동일한 DS 페이지</td><td>동일한 DS 페이지 (컨텍스트만 사전 채움)</td></tr>
+        <tr><td>대표 사용자</td><td>일상 운영 PM/MD</td><td>특정 과제 담당자, 의사결정자</td></tr>
+      </tbody>
+    </table>
+
+    <h3>기본 진입 자유 탐색 예시 (시나리오 1식 흐름)</h3>
+    <div class="flow">
+      <div class="flow-step">DS#1 진입</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">A상품 매출 부진 발견</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">"어디서 막혔는지" 카드</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">DS#3 (퍼널 확인)</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">"누가 이탈했는지" 카드</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step">DS#2 (세그먼트)</div>
+    </div>
+  </div>
+
+  <!-- 12 UC mapping -->
+  <div class="section">
+    <h2>3. 12 UC ↔ IA 매핑</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 18%;">모드 (워크플로우)</th>
+          <th style="width: 8%;">UC</th>
+          <th style="width: 24%;">단계</th>
+          <th style="width: 18%;">사용 DS 페이지</th>
+          <th style="width: 12%;">Tier</th>
+          <th>주요 기능</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="3"><strong>매출 부진 360°</strong></td><td>UC1</td><td>What (현상 진단)</td><td><span class="ds-tag ds1">DS#1</span></td><td class="tier-basic">Basic</td><td>매출·판매량 추이, 부진 탐지</td></tr>
+        <tr><td>UC2</td><td>Why (원인 파악)</td><td><span class="ds-tag ds3">DS#3</span></td><td class="tier-basic">Basic</td><td>퍼널 단계별 이탈 분석</td></tr>
+        <tr><td>UC3</td><td>Who (대상 식별)</td><td><span class="ds-tag ds2">DS#2</span></td><td class="tier-basic">Basic</td><td>이탈 세그먼트 식별</td></tr>
+
+        <tr><td rowspan="3"><strong>베스트셀러 360°</strong></td><td>UC4</td><td>Discover (시그널 감지)</td><td><span class="ds-tag ds3">DS#3</span></td><td class="tier-basic">Basic</td><td>입소문/장바구니 급증 시그널</td></tr>
+        <tr><td>UC5</td><td>Expand (잠재 확장)</td><td><span class="ds-tag ds2">DS#2</span></td><td class="tier-basic">Basic</td><td>카테고리 단위 비교, 잠재 세그먼트 발굴</td></tr>
+        <tr><td>UC6</td><td>Boost (부스팅)</td><td><span class="ds-tag ds1">DS#1</span></td><td class="tier-standard">Standard</td><td>세그먼트 퍼널 검증, 부스팅 시뮬레이션</td></tr>
+
+        <tr><td rowspan="3"><strong>라인업 정리 360°</strong></td><td>UC7</td><td>Classify (분류)</td><td><span class="ds-tag ds1">DS#1</span></td><td class="tier-basic">Basic</td><td>4분면 매트릭스 분류</td></tr>
+        <tr><td>UC8</td><td>Diagnose (사유 진단)</td><td><span class="ds-tag ds3">DS#3</span></td><td class="tier-basic">Basic</td><td>부진 사유 분류 (노출/전환/품질)</td></tr>
+        <tr><td>UC9</td><td>Validate (고객 영향)</td><td><span class="ds-tag ds2">DS#2</span></td><td class="tier-standard">Standard</td><td>단종 시 잃을 고객층 검증</td></tr>
+
+        <tr><td rowspan="3"><strong>신상품 사전 360°</strong></td><td>UC10</td><td>Need (시장 니즈)</td><td><span class="ds-tag ds3">DS#3</span></td><td class="tier-basic">Basic</td><td>키워드/리뷰로 미충족 니즈 발굴</td></tr>
+        <tr><td>UC11</td><td>Target (타겟 분석)</td><td><span class="ds-tag ds2">DS#2</span></td><td class="tier-basic">Basic</td><td>카테고리 단위 비교, 타겟 세그먼트 정의</td></tr>
+        <tr><td>UC12</td><td>Forecast (사전 예측)</td><td><span class="ds-tag ds1">DS#1</span></td><td class="tier-standard">Standard</td><td>세그먼트 퍼널 검증, 매출 시뮬레이션</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Defense -->
+  <div class="section">
+    <h2>4. 발표 방어 메시지</h2>
+    <div class="defense">
+      <div class="q">Q. 왜 페이지가 12개나 필요한가?</div>
+      <div class="a">페이지는 3개입니다 (DS#1/2/3). 12개 UC는 그 3개 페이지 위에서 일어나는 사용 패턴(워크플로우 단계)입니다.</div>
+    </div>
+    <div class="defense">
+      <div class="q">Q. 모드가 없으면 못 쓰는 기능인가?</div>
+      <div class="a">아닙니다. 기본 진입(자유 탐색)으로 동일 흐름이 가능합니다. 모드는 컨텍스트 자동 채움 + 순서 가이드로 효율화하는 도구입니다.</div>
+    </div>
+    <div class="defense">
+      <div class="q">Q. 요금제 차등 기준이 무엇인가?</div>
+      <div class="a">페이지 추가가 아닌 데이터 깊이(Layer)로 차등합니다. Basic은 자사 단일 데이터, Standard는 카테고리 비교/세그먼트 퍼널, Premium은 시장 트렌드입니다.</div>
+    </div>
+    <div class="defense">
+      <div class="q">Q. 사용자가 자기 흐름을 만들 수 있나?</div>
+      <div class="a">가능합니다. 기본 진입에서 각 DS 페이지의 "다음 액션 카드"가 다른 DS로의 드릴스루를 제공합니다. 시나리오 1 흐름(DS#1→DS#3→DS#2)이 기본 진입에서도 동일하게 동작합니다.</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

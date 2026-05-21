@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC7 - SKU 4분면 자동 분류</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #7c5dc4; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #7c5dc4; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #d4edda; border: 1px solid #5cb85c; border-radius: 4px; font-size: 12px; font-weight: 600; color: #1e7e34; }
+  .mode-badge { padding: 4px 10px; background: #ede7f6; border: 1px solid #7c5dc4; border-radius: 4px; font-size: 12px; font-weight: 600; color: #5b3fa0; margin-left: 8px; }
+
+  .filter-bar { display: flex; gap: 12px; padding: 12px; background: #f0f0f0; border-radius: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter { padding: 6px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+  .filter.active { background: #ede7f6; border-color: #7c5dc4; color: #5b3fa0; font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { padding: 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; }
+  .kpi.good { background: #e8f5e9; border-color: #5cb85c; }
+  .kpi.warn { background: #fff3cd; border-color: #ffc107; }
+  .kpi-label { font-size: 12px; color: #666; }
+  .kpi-value { font-size: 22px; font-weight: bold; margin: 4px 0; }
+  .kpi-change { font-size: 12px; }
+
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+  .chart-title { font-size: 14px; color: #222; margin-bottom: 8px; font-weight: 700; }
+
+  /* 4분면 매트릭스 */
+  .matrix-container { position: relative; width: 100%; height: 480px; background: linear-gradient(to bottom right, #e8f5e9 0%, #e8f5e9 49%, #fff3cd 51%, #fff3cd 100%); border: 1px solid #ccc; }
+  .matrix-axis-y { position: absolute; left: -10px; top: 50%; transform: rotate(-90deg) translateX(50%); font-size: 12px; font-weight: 600; color: #555; }
+  .matrix-axis-x { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 600; color: #555; }
+  .matrix-label { position: absolute; font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 3px; background: rgba(255,255,255,0.85); }
+  .matrix-label.q1 { top: 10px; right: 10px; color: #1e7e34; }
+  .matrix-label.q2 { top: 10px; left: 10px; color: #2c5cf5; }
+  .matrix-label.q3 { bottom: 10px; left: 10px; color: #d9534f; }
+  .matrix-label.q4 { bottom: 10px; right: 10px; color: #856404; }
+  .matrix-divider-x { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #aaa; }
+  .matrix-divider-y { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #aaa; }
+  .sku-dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .sku-dot.strong { background: #1e7e34; }
+  .sku-dot.keep { background: #2c5cf5; }
+  .sku-dot.improve { background: #d9534f; }
+  .sku-dot.clean { background: #856404; }
+  .sku-dot.large { width: 18px; height: 18px; }
+
+  .group-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .group-card { padding: 16px; border-radius: 6px; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; }
+  .group-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .group-card.strong { background: #e8f5e9; border-color: #5cb85c; }
+  .group-card.keep { background: #e7f3ff; border-color: #2c5cf5; }
+  .group-card.improve { background: #fdecea; border-color: #d9534f; }
+  .group-card.improve.suggested { box-shadow: 0 0 0 3px #d9534f; }
+  .group-card.clean { background: #fff3cd; border-color: #856404; }
+  .group-card.clean.suggested { box-shadow: 0 0 0 3px #856404; }
+  .group-card .label { font-size: 12px; color: #666; margin-bottom: 4px; }
+  .group-card .count { font-size: 28px; font-weight: bold; margin-bottom: 4px; }
+  .group-card .desc { font-size: 11px; color: #888; line-height: 1.4; }
+
+  /* 부진 사유 카드 */
+  .reason-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+  .reason-card { padding: 14px; border-radius: 4px; background: #fafbfd; border: 1px solid #e1e6ee; }
+  .reason-card .num { font-size: 22px; font-weight: bold; color: #d9534f; }
+  .reason-card .label { font-size: 12px; color: #444; margin-top: 4px; }
+  .reason-card .hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+  .diagnosis-card { padding: 18px; background: #ede7f6; border-left: 4px solid #7c5dc4; margin-bottom: 16px; border-radius: 4px; }
+  .diagnosis-card h3 { margin: 0 0 8px; font-size: 18px; color: #5b3fa0; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #ede7f6; border-left: 4px solid #7c5dc4; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #e7e8ea; border-left: 4px solid #6c757d; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+  .efficiency-banner { background: #f3e8ff; border: 1px solid #c4a8e8; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #5b3fa0; }
+  .efficiency-banner strong { color: #5b3fa0; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 상품 성과 진단</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC7 :</b> 파트너는 상품 라인업을 매출·성장률 기준으로 4분면 자동 분류해 강화·유지·개선·정리 후보를 한눈에 식별할 수 있다.</div>
+  <div class="step-line"><b>Step 1</b> PO 인사이트 진입 → <strong>"월간 라인업 리뷰"</strong> 모드 진입 (월간 루틴 자동 진입)</div>
+  <div class="step-line"><b>Step 2</b> KPI 카드: 총 매출 / 성장률 / 활성 SKU 31개 / 부진 SKU 비중</div>
+  <div class="step-line"><b>Step 3</b> 4분면 매트릭스 자동 분류 (매출 × 성장률) → <strong>강화 6 / 유지 12 / 개선 8 / 정리 5</strong></div>
+  <div class="step-line"><b>Step 4</b> 부진 그룹(개선+정리 = 13개) 선택 → 부진 SKU 리스트 확인</div>
+  <div class="step-line"><b>Step 5</b> 부진 사유 자동 분포 확인 → <strong>품질 4 / 노출 부족 5 / 옵션 이슈 2 / 미분류 2</strong></div>
+  <div class="step-line"><b>Step 6</b> 진단: <strong>"13개 부진 SKU 처리 의사결정 — 후기로 진단 필요"</strong></div>
+  <div class="step-line"><b>Step 7</b> 다음 분석: 고객 반응 모니터링으로 이동 (개선 vs 정리 결정)</div>
+</div>
+
+<div class="step-header">Step 1-7 · 월간 라인업 리뷰</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>상품 성과 진단</b></div>
+    <div>
+      <span class="tier-badge">Basic 요금제</span>
+      <span class="mode-badge">📅 월간 라인업 리뷰 모드</span>
+    </div>
+  </div>
+
+  <div class="efficiency-banner">
+    💡 <strong>매월 엑셀로 일일이 분류하던 작업이 자동화</strong>되어 있습니다. 평소 1주 걸리는 라인업 리뷰가 30분에 끝납니다.
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter active">📅 기간: 2026.04 (지난 한 달)</div>
+    <div class="filter">📦 카테고리: 전체 ▼</div>
+    <div class="filter">⚙️ 비교: 전월 대비 ▼</div>
+  </div>
+
+  <h4>라인업 KPI</h4>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">총 매출 (지난 달)</div>
+      <div class="kpi-value">₩158M</div>
+      <div class="kpi-change" style="color:#1e7e34;font-weight:600;">▲ +8% vs 전월</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">활성 SKU</div>
+      <div class="kpi-value">31</div>
+      <div class="kpi-change" style="color:#888;">판매중 + 품절 합산</div>
+    </div>
+    <div class="kpi good">
+      <div class="kpi-label">강화 가능 SKU</div>
+      <div class="kpi-value" style="color:#1e7e34;">6</div>
+      <div class="kpi-change" style="color:#1e7e34;font-weight:600;">매출·성장 모두 ↑</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-label">⚠️ 부진 SKU</div>
+      <div class="kpi-value" style="color:#856404;">13</div>
+      <div class="kpi-change" style="color:#856404;font-weight:600;">개선 8 + 정리 5</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">SKU 라인업 4분면 자동 분류 (매출 × 성장률)</h4>
+  <div class="chart-wrap">
+    <div style="position:relative; padding: 20px 0 30px 30px;">
+      <div class="matrix-container">
+        <div class="matrix-divider-x"></div>
+        <div class="matrix-divider-y"></div>
+        <div class="matrix-label q1">🟢 강화 (Star) · 6개</div>
+        <div class="matrix-label q2">🔵 유지 (Cash Cow) · 12개</div>
+        <div class="matrix-label q3">🔴 정리 (Dog) · 5개</div>
+        <div class="matrix-label q4">🟡 개선 (Question) · 8개</div>
+
+        <!-- 강화 (Q1: 매출↑ 성장↑) - 우상단 -->
+        <div class="sku-dot strong large" style="top:15%; left:75%;" title="SKU A1: 베스트셀러"></div>
+        <div class="sku-dot strong" style="top:20%; left:82%;" title="SKU A2"></div>
+        <div class="sku-dot strong" style="top:25%; left:70%;" title="SKU A3"></div>
+        <div class="sku-dot strong" style="top:18%; left:88%;" title="SKU A4"></div>
+        <div class="sku-dot strong" style="top:30%; left:78%;" title="SKU A5"></div>
+        <div class="sku-dot strong" style="top:22%; left:65%;" title="SKU A6"></div>
+
+        <!-- 유지 (Q2: 매출↑ 성장↓ - 안정적 캐쉬카우) - 좌상단 -->
+        <div class="sku-dot keep" style="top:30%; left:30%;" title="SKU K1"></div>
+        <div class="sku-dot keep" style="top:25%; left:20%;" title="SKU K2"></div>
+        <div class="sku-dot keep large" style="top:15%; left:35%;" title="SKU K3: 캐쉬카우"></div>
+        <div class="sku-dot keep" style="top:35%; left:42%;" title="SKU K4"></div>
+        <div class="sku-dot keep" style="top:22%; left:15%;" title="SKU K5"></div>
+        <div class="sku-dot keep" style="top:40%; left:25%;" title="SKU K6"></div>
+        <div class="sku-dot keep" style="top:18%; left:45%;" title="SKU K7"></div>
+        <div class="sku-dot keep" style="top:28%; left:38%;" title="SKU K8"></div>
+        <div class="sku-dot keep" style="top:32%; left:10%;" title="SKU K9"></div>
+        <div class="sku-dot keep" style="top:42%; left:30%;" title="SKU K10"></div>
+        <div class="sku-dot keep" style="top:38%; left:18%;" title="SKU K11"></div>
+        <div class="sku-dot keep" style="top:20%; left:48%;" title="SKU K12"></div>
+
+        <!-- 개선 (Q4: 매출↓ 성장↑) - 우하단 -->
+        <div class="sku-dot improve" style="top:65%; left:75%;" title="SKU I1"></div>
+        <div class="sku-dot improve" style="top:72%; left:65%;" title="SKU I2"></div>
+        <div class="sku-dot improve" style="top:58%; left:80%;" title="SKU I3"></div>
+        <div class="sku-dot improve" style="top:70%; left:88%;" title="SKU I4"></div>
+        <div class="sku-dot improve" style="top:78%; left:70%;" title="SKU I5"></div>
+        <div class="sku-dot improve" style="top:62%; left:68%;" title="SKU I6"></div>
+        <div class="sku-dot improve" style="top:75%; left:82%;" title="SKU I7"></div>
+        <div class="sku-dot improve" style="top:68%; left:60%;" title="SKU I8"></div>
+
+        <!-- 정리 (Q3: 매출↓ 성장↓) - 좌하단 -->
+        <div class="sku-dot clean" style="top:80%; left:15%;" title="SKU C1: 정리 후보"></div>
+        <div class="sku-dot clean" style="top:75%; left:25%;" title="SKU C2"></div>
+        <div class="sku-dot clean large" style="top:88%; left:20%;" title="SKU C3: 즉시 정리 후보"></div>
+        <div class="sku-dot clean" style="top:82%; left:35%;" title="SKU C4"></div>
+        <div class="sku-dot clean" style="top:70%; left:12%;" title="SKU C5"></div>
+
+        <div class="matrix-axis-x" style="position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);">→ 성장률 (전월 대비) 높음</div>
+      </div>
+      <div style="position:absolute; left:-10px; top:50%; transform: rotate(-90deg); transform-origin: left top; font-size:12px; font-weight:600; color:#555; white-space:nowrap;">↑ 매출 규모 큼</div>
+    </div>
+    <div style="margin-top:16px; font-size:12px; color:#666;">각 점 = 1개 SKU. 큰 점 = 매출 영향 큰 핵심 SKU. 클릭 시 해당 SKU 상세 (mockup)</div>
+  </div>
+
+  <h4>그룹별 액션 후보 (그룹 클릭 → 리스트 확인)</h4>
+  <div class="group-cards">
+    <div class="group-card strong">
+      <div class="label">🟢 강화 (Star)</div>
+      <div class="count">6</div>
+      <div class="desc">매출 ↑ + 성장 ↑<br>부스팅 액션 검토 (시나리오 2 참조)</div>
+    </div>
+    <div class="group-card keep">
+      <div class="label">🔵 유지 (Cash Cow)</div>
+      <div class="count">12</div>
+      <div class="desc">매출 ↑ + 성장 보합<br>현상 유지·재고 안정 운영</div>
+    </div>
+    <div class="group-card improve suggested">
+      <div class="label">🟡 개선 (Question)</div>
+      <div class="count">8</div>
+      <div class="desc">매출 ↓ + 성장 ↑<br>잠재력 있음, 사유 진단 필요 👆</div>
+    </div>
+    <div class="group-card clean suggested">
+      <div class="label">🔴 정리 (Dog)</div>
+      <div class="count">5</div>
+      <div class="desc">매출 ↓ + 성장 ↓<br>정리 후보, 사유 확인 후 결정 👆</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">부진 SKU (개선+정리 13개) 사유 자동 분포</h4>
+  <div class="chart-wrap">
+    <div class="reason-cards">
+      <div class="reason-card">
+        <div class="num">4</div>
+        <div class="label">🔴 후기 부정 (품질 이슈)</div>
+        <div class="hint">사이즈·원단·박음질 등 부정 키워드</div>
+      </div>
+      <div class="reason-card">
+        <div class="num">5</div>
+        <div class="label">🔵 후기 없음 (노출 부족)</div>
+        <div class="hint">후기 3개 미만, 노출 부족 추정</div>
+      </div>
+      <div class="reason-card">
+        <div class="num">2</div>
+        <div class="label">🟡 옵션 이슈</div>
+        <div class="hint">특정 색상·사이즈만 부진</div>
+      </div>
+      <div class="reason-card">
+        <div class="num">2</div>
+        <div class="label">⚪ 진단 불가 (미분류)</div>
+        <div class="hint">데이터 부족, 추가 조사 필요</div>
+      </div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 진단 요약</h4>
+  <div class="diagnosis-card">
+    <h3>📊 라인업 4분면 자동 분류 완료</h3>
+    <b>31개 SKU → 강화 6 / 유지 12 / 개선 8 / 정리 5</b><br>
+    <strong>부진 13개 SKU 처리 의사결정 필요</strong><br>
+    <span style="font-size:12px; color:#666;">→ 다음 단계: 고객 반응 모니터링으로 이동해 부진 사유 진단 + 개선 vs 정리 결정</span>
+  </div>
+
+  <h4>🔗 다음 액션 검토 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 7)</span></h4>
+  <div class="action-grid">
+    <div class="action-card primary">
+      <b>📊 다음 분석: 고객 반응 모니터링</b>
+      부진 13개 SKU의 부진 사유 진단<br>(개선 vs 정리 결정 근거)
+    </div>
+    <div class="action-card secondary">
+      <b>🟢 강화 6개 SKU 부스팅 검토</b>
+      베스트셀러 발굴 360° (시나리오 2)<br>흐름으로 별도 진행
+    </div>
+    <div class="action-card tertiary">
+      <b>📁 라인업 리포트 다운로드</b>
+      엑셀로 자동 정리된 분류 리스트<br>월간 보고용 파일 추출
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

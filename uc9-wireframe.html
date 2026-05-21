@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>UC9 - 라인업 재편 고객 영향 검증</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; margin: 0; padding: 24px; background: #f5f5f5; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .scenario-overview { background: #fff8e1; padding: 22px 26px; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ffc107; font-size: 15px; line-height: 1.85; }
+  .scenario-overview .uc-title { font-size: 17px; font-weight: 600; color: #222; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed #d4ad57; }
+  .scenario-overview .uc-title b { color: #7c5dc4; }
+  .scenario-overview .step-line { padding: 3px 0; }
+  .scenario-overview .step-line b { color: #2c5cf5; margin-right: 6px; }
+  .scenario-overview .step-line strong { color: #7c5dc4; }
+
+  .step-header { background: #2c5cf5; color: white; padding: 8px 16px; border-radius: 4px; display: inline-block; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .screen { background: white; border: 2px solid #333; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; margin-bottom: 16px; border-radius: 4px; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb b { color: #222; }
+  .tier-badge { padding: 4px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .mode-badge { padding: 4px 10px; background: #ede7f6; border: 1px solid #7c5dc4; border-radius: 4px; font-size: 12px; font-weight: 600; color: #5b3fa0; margin-left: 8px; }
+
+  .efficiency-banner { background: #f3e8ff; border: 1px solid #c4a8e8; padding: 14px 18px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #5b3fa0; }
+
+  h4 { margin: 16px 0 8px; font-size: 14px; }
+  .chart-wrap { background: #fafbfd; border: 1px solid #e1e6ee; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+
+  /* 정리 후보 검증 카드 */
+  .verify-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .verify-section { padding: 18px; border-radius: 6px; }
+  .verify-section.cleanup { background: #fdecea; border-left: 4px solid #d9534f; }
+  .verify-section.boost { background: #e8f5e9; border-left: 4px solid #1e7e34; }
+  .verify-section h3 { margin: 0 0 12px; font-size: 16px; }
+  .verify-section.cleanup h3 { color: #d9534f; }
+  .verify-section.boost h3 { color: #1e7e34; }
+
+  .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-label { color: #555; }
+  .metric-value { font-weight: 600; }
+  .metric-value.good { color: #1e7e34; }
+  .metric-value.bad { color: #d9534f; }
+
+  .verdict-box { margin-top: 12px; padding: 10px 14px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+  .verdict-box.safe { background: white; color: #1e7e34; border: 1px solid #5cb85c; }
+  .verdict-box.warn { background: white; color: #d9534f; border: 1px solid #d9534f; }
+
+  /* 강화 후보 매트릭스 */
+  .boost-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 8px 12px; background: white; border-radius: 4px; }
+  .boost-row.priority { background: #fff3cd; border: 2px solid #ffc107; }
+  .boost-row .name { width: 200px; font-weight: 500; font-size: 13px; }
+  .boost-row .gap-bar-wrap { flex: 1; background: #f0f0f0; height: 20px; border-radius: 3px; overflow: hidden; }
+  .boost-row .gap-bar { height: 100%; background: #1e7e34; border-radius: 3px; }
+  .boost-row .gap-pct { width: 70px; text-align: right; font-weight: 600; color: #1e7e34; }
+
+  /* 최종 의사결정 요약 */
+  .final-decision { background: #ede7f6; border: 2px solid #7c5dc4; padding: 20px; border-radius: 8px; margin: 20px 0; }
+  .final-decision h3 { margin: 0 0 12px; font-size: 18px; color: #5b3fa0; }
+  .decision-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 12px; }
+  .decision-cell { background: white; padding: 12px; border-radius: 4px; text-align: center; }
+  .decision-cell .num { font-size: 24px; font-weight: bold; }
+  .decision-cell .label { font-size: 11px; color: #666; margin-top: 4px; }
+  .decision-cell.clean .num { color: #d9534f; }
+  .decision-cell.marketing .num { color: #2c5cf5; }
+  .decision-cell.option .num { color: #856404; }
+  .decision-cell.quality .num { color: #6c757d; }
+  .decision-cell.boost .num { color: #1e7e34; }
+
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .action-card { padding: 16px; border-radius: 4px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+  .action-card.primary { background: #d4edda; border-left: 4px solid #5cb85c; }
+  .action-card.secondary { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  .action-card.tertiary { background: #fff3cd; border-left: 4px solid #ffc107; }
+  .action-card.danger { background: #fdecea; border-left: 4px solid #d9534f; }
+  .action-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .action-card b { display: block; margin-bottom: 6px; }
+
+  .time-savings { background: linear-gradient(to right, #ede7f6, #f3e8ff); border: 2px solid #7c5dc4; padding: 18px 24px; border-radius: 8px; margin: 20px 0; text-align: center; }
+  .time-savings .head { font-size: 16px; color: #5b3fa0; font-weight: 600; margin-bottom: 6px; }
+  .time-savings .compare { font-size: 14px; color: #555; }
+  .time-savings .compare b { color: #5b3fa0; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h1>데이터 : 고객 프로파일 진단</h1>
+<div class="scenario-overview">
+  <div class="uc-title"><b>UC9 :</b> 파트너는 라인업 재편의 고객 영향을 미리 검증해 안전하게 의사결정을 실행할 수 있다.</div>
+  <div class="step-line"><b>Step 15</b> UC8 다음 액션에서 고객 프로파일 진단 진입 → <strong>19개 SKU 자동 조회</strong> (부진 13 + 강화 6)</div>
+  <div class="step-line"><b>Step 16</b> 정리 후보 1개 SKU 충성 고객 분석 → <strong>재구매율 8% / LTV 낮음 / 교차 구매 없음 → 정리 안전</strong></div>
+  <div class="step-line"><b>Step 17</b> 강화 후보 6개 SKU 잠재 시장 분석 → <strong>20대 여성 갭 큰 2개 SKU 우선순위 식별</strong></div>
+  <div class="step-line"><b>Step 18</b> 종합 라인업 의사결정 정리 → <strong>정리 1 / 마케팅 강화 5 / 옵션 변경 3 / 품질 개선 4 / 우선 부스팅 2</strong></div>
+  <div class="step-line"><b>Step 19</b> 종합 액션 도출 → SKU 정리 / 마케팅 / 옵션 발주 / 품질 검수 / CRM</div>
+  <div class="step-line"><b>Step 20</b> 월간 리뷰 완료 → <strong>"평소 1주일 작업 → 30분 완료"</strong></div>
+</div>
+
+<div class="step-header">Step 15-20 · 고객 영향 검증 + 최종 의사결정</div>
+<div class="screen">
+  <div class="top-bar">
+    <div class="breadcrumb">파트너 오피스 &gt; 인사이트 &gt; 데이터 인사이트 &gt; <b>고객 프로파일 진단</b></div>
+    <div>
+      <span class="tier-badge">Standard 요금제</span>
+      <span class="mode-badge">📅 월간 라인업 리뷰 — 영향 검증</span>
+    </div>
+  </div>
+
+  <div class="efficiency-banner">
+    💡 <strong>의사결정 전 마지막 안전 점검</strong>: "정리하면 누가 떠나나? / 강화하면 누가 더 사나?"를 데이터로 사전 검증
+  </div>
+
+  <h4>의사결정 검증 (정리 후보 + 강화 후보)</h4>
+  <div class="verify-grid">
+    <!-- 정리 후보 검증 -->
+    <div class="verify-section cleanup">
+      <h3>🔴 정리 후보 1개 SKU 충성 고객 영향</h3>
+      <div style="font-size:13px; margin-bottom:10px;"><b>코어 트레이닝 팬츠 (BLK-L)</b> · 매출 ₩2M · UC8에서 즉시 정리 결정</div>
+      <div class="metric-row">
+        <span class="metric-label">재구매율</span>
+        <span class="metric-value bad">8%</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">평균 객단가</span>
+        <span class="metric-value bad">₩45K (브랜드 평균 ₩78K 대비 낮음)</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">충성 고객 비중</span>
+        <span class="metric-value bad">3% (12명)</span>
+      </div>
+      <div class="metric-row">
+        <span class="metric-label">교차 구매 (다른 자사 상품)</span>
+        <span class="metric-value bad">22% — 낮음</span>
+      </div>
+      <div class="verdict-box safe">
+        ✅ 정리 안전. 충성 고객 영향 미미. 12명 교환·환불 안내만 발송하면 OK.
+      </div>
+    </div>
+
+    <!-- 강화 후보 검증 -->
+    <div class="verify-section boost">
+      <h3>🟢 강화 후보 6개 SKU 잠재 시장 분석</h3>
+      <div style="font-size:13px; margin-bottom:10px;">UC7 강화 후보 6개 중 <b>잠재 시장 갭이 큰 2개</b>를 우선 부스팅 대상으로 식별</div>
+      <div class="boost-row priority">
+        <div class="name">🥇 에어로 라이트 윈드 자켓</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:80%;"></div></div>
+        <div class="gap-pct">+10%p</div>
+      </div>
+      <div class="boost-row priority">
+        <div class="name">🥈 러닝 컴프레션 레깅스</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:65%;"></div></div>
+        <div class="gap-pct">+8%p</div>
+      </div>
+      <div class="boost-row">
+        <div class="name">테크플리스 풀집 자켓</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:30%;"></div></div>
+        <div class="gap-pct">+4%p</div>
+      </div>
+      <div class="boost-row">
+        <div class="name">오버사이즈 후드 스웻셔츠</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:25%;"></div></div>
+        <div class="gap-pct">+3%p</div>
+      </div>
+      <div class="boost-row">
+        <div class="name">스트레치 트레이닝 팬츠</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:18%;"></div></div>
+        <div class="gap-pct">+2%p</div>
+      </div>
+      <div class="boost-row">
+        <div class="name">미드웨이트 자켓</div>
+        <div class="gap-bar-wrap"><div class="gap-bar" style="width:10%;"></div></div>
+        <div class="gap-pct">+1%p</div>
+      </div>
+      <div class="verdict-box safe">
+        ✅ 상위 2개 (Top 2) SKU에 마케팅 예산 집중. 나머지 4개는 자연 성장 관찰.
+      </div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:24px;">📋 종합 의사결정 (19개 SKU)</h4>
+  <div class="final-decision">
+    <h3>✅ 월간 라인업 재편 의사결정 완료</h3>
+    <div class="decision-grid">
+      <div class="decision-cell clean">
+        <div class="num">1</div>
+        <div class="label">🔴 정리</div>
+      </div>
+      <div class="decision-cell marketing">
+        <div class="num">5</div>
+        <div class="label">🔵 마케팅 강화</div>
+      </div>
+      <div class="decision-cell option">
+        <div class="num">3</div>
+        <div class="label">🟡 옵션 변경</div>
+      </div>
+      <div class="decision-cell quality">
+        <div class="num">4</div>
+        <div class="label">⚪ 품질 개선</div>
+      </div>
+      <div class="decision-cell boost">
+        <div class="num">2</div>
+        <div class="label">🟢 우선 부스팅</div>
+      </div>
+    </div>
+    <div style="margin-top:12px; font-size:12px; color:#666;">
+      나머지 14개 (유지 12 + 강화 후보 잔여 4 + 미분류 2) → 현상 유지 / 추가 관찰
+    </div>
+  </div>
+
+  <h4>🔗 종합 액션 도출 <span style="font-size:12px; font-weight:normal; color:#666;">(Step 19)</span></h4>
+  <div class="action-grid">
+    <div class="action-card danger">
+      <b>🔴 SKU 정리 처리</b>
+      코어 트레이닝 팬츠 (BLK-L) 즉시 판매중지<br>충성 고객 12명에 안내 발송
+    </div>
+    <div class="action-card secondary">
+      <b>🔵 마케팅 캠페인 5건</b>
+      노출 부족 5개 SKU 대상<br>DA·기획전·검색 광고 신청
+    </div>
+    <div class="action-card tertiary">
+      <b>🟡 옵션 발주 변경 3건</b>
+      부진 옵션 정리·인기 옵션 보강<br>다음 발주 시 반영
+    </div>
+    <div class="action-card tertiary">
+      <b>🛠️ MD·QA팀 품질 검수 4건</b>
+      "사이즈 작다" 28회 키워드 기반<br>사이즈 표기·원단·박음질 검수
+    </div>
+    <div class="action-card primary">
+      <b>🟢 우선 부스팅 2건</b>
+      에어로 라이트 윈드 자켓<br>+ 러닝 컴프레션 레깅스
+    </div>
+    <div class="action-card primary">
+      <b>📨 20대 여성 잠재 고객 CRM</b>
+      Top 2 부스팅 SKU 대상<br>잠재 시장 +10%p 도달 캠페인
+    </div>
+  </div>
+
+  <div class="time-savings">
+    <div class="head">⏱️ 시간 효율화 효과</div>
+    <div class="compare">평소 라인업 리뷰: <b>1주일</b> (엑셀·미팅·정리) → 데이터 자동화: <b>30분</b><br>
+    <span style="font-size:12px; color:#888;">31개 SKU 자동 분류 + 13개 부진 사유 진단 + 19개 의사결정 검증을 한 화면에서</span></div>
+  </div>
+</div>
+
+</body>
+</html>
