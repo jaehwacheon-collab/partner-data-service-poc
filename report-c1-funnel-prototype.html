@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>리포트: C1. 퍼널 이탈 진단 (데이터 + AI 분석)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", sans-serif; color: #1a1a1a; background: #f5f6f8; font-size: 13px; }
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  .global-header { background: white; border-bottom: 1px solid #e0e3e8; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .breadcrumb { font-size: 13px; color: #666; }
+  .breadcrumb .sep { color: #ccc; margin: 0 6px; }
+  .breadcrumb .current { color: #111; font-weight: 700; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .tier-badge { background: #dbeafe; color: #1e40af; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: 600; }
+  .btn { background: white; border: 1px solid #d0d5dc; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #333; }
+  .btn:hover { background: #f0f2f5; }
+  .btn.primary { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+
+  .filter-bar { background: white; border-bottom: 1px solid #e0e3e8; padding: 10px 20px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; font-size: 12px; }
+  .filter { background: #f0f2f5; padding: 5px 12px; border-radius: 5px; }
+  .filter strong { color: #111; }
+
+  .tab-bar { background: white; border-bottom: 1px solid #e0e3e8; padding: 0 20px; display: flex; flex-shrink: 0; }
+  .tab { padding: 11px 18px; cursor: pointer; font-size: 13px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tab.active { color: #111; border-bottom-color: #5a2ec4; }
+  .tab:hover:not(.active) { color: #333; }
+  .tab-count { background: #f0f2f5; color: #666; padding: 1px 7px; border-radius: 10px; font-size: 10px; margin-left: 6px; font-weight: 700; }
+
+  main { flex: 1; display: flex; overflow: hidden; }
+
+  .data-panel { flex: 1; overflow: auto; background: white; position: relative; }
+  .data-view { display: none; }
+  .data-view.active { display: block; }
+
+  table.data-grid { border-collapse: collapse; width: 100%; min-width: 1050px; font-size: 12px; }
+  table.data-grid thead { position: sticky; top: 0; z-index: 10; background: #f8f9fb; }
+  table.data-grid th { padding: 9px 10px; border-bottom: 2px solid #d0d5dc; border-right: 1px solid #e8eaed; text-align: left; font-weight: 600; color: #555; white-space: nowrap; font-size: 11px; }
+  table.data-grid th.num { text-align: right; }
+  table.data-grid td { padding: 7px 10px; border-bottom: 1px solid #e8eaed; border-right: 1px solid #e8eaed; vertical-align: middle; transition: background 0.15s, box-shadow 0.15s; }
+  table.data-grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data-grid td.label { font-weight: 600; color: #111; }
+  table.data-grid td.dim { color: #888; }
+  table.data-grid tr:hover td { background: #fafbfc; }
+  table.data-grid td.bad { color: #dc2626; font-weight: 600; }
+  table.data-grid td.good { color: #059669; font-weight: 600; }
+
+  tr[data-highlight="amber"] td { background: #fffbeb !important; }
+  tr[data-highlight="amber"] td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+  tr[data-highlight="red"] td { background: #fef2f2 !important; }
+  tr[data-highlight="red"] td:first-child { box-shadow: inset 3px 0 0 #dc2626; }
+  tr[data-highlight="purple"] td { background: #f5f3ff !important; }
+  tr[data-highlight="purple"] td:first-child { box-shadow: inset 3px 0 0 #8b5cf6; }
+
+  td.cell-focus { outline: 2px solid currentColor; outline-offset: -2px; font-weight: 700; }
+  tr[data-highlight="amber"] td.cell-focus { color: #92400e; }
+  tr[data-highlight="red"] td.cell-focus { color: #b91c1c; }
+  tr[data-highlight="purple"] td.cell-focus { color: #5b21b6; }
+
+  .ai-panel { width: 460px; background: white; border-left: 1px solid #e0e3e8; overflow: auto; display: flex; flex-direction: column; flex-shrink: 0; }
+  .ai-header { padding: 14px 18px; border-bottom: 1px solid #e0e3e8; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; background: white; z-index: 5; }
+  .ai-header .icon { width: 26px; height: 26px; background: linear-gradient(135deg, #8b5cf6, #5a2ec4); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }
+  .ai-header h2 { font-size: 15px; }
+  .ai-header .badge { background: #ede9fe; color: #5a2ec4; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: auto; }
+
+  .funnel-overview { padding: 14px 18px; border-bottom: 1px solid #f0f2f5; background: linear-gradient(180deg, #faf9ff, white); }
+  .funnel-overview .label { font-size: 11px; color: #888; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .funnel-row { display: grid; grid-template-columns: 60px 1fr 110px; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 11px; }
+  .funnel-row .stage { color: #555; font-weight: 600; }
+  .funnel-row .bar { background: #f0f2f5; height: 18px; border-radius: 3px; overflow: hidden; position: relative; }
+  .funnel-row .bar-fill { height: 100%; background: linear-gradient(90deg, #8b5cf6, #5a2ec4); border-radius: 3px; }
+  .funnel-row .val { font-size: 11px; color: #111; text-align: right; font-variant-numeric: tabular-nums; }
+  .funnel-row .val .pct { color: #888; font-size: 10px; margin-left: 4px; }
+
+  .ai-summary { padding: 14px 18px; border-bottom: 1px solid #f0f2f5; }
+  .ai-summary p { font-size: 13px; line-height: 1.6; color: #333; }
+  .ai-summary strong { color: #5a2ec4; }
+
+  .insights-list { padding: 14px 18px; flex: 1; }
+  .insights-list .section-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+  .insight-card { background: white; border: 1.5px solid #e0e3e8; border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .insight-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .insight-card.active { border-color: var(--accent); border-width: 2px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+  .insight-card .insight-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-bottom: 7px; color: white; background: var(--accent); }
+  .insight-card .insight-tag .tab-link { background: rgba(255,255,255,0.25); padding: 1px 5px; border-radius: 6px; font-size: 9px; }
+  .insight-card .uc-label { font-size: 10px; color: #888; font-weight: 700; margin-bottom: 3px; letter-spacing: 0.5px; }
+  .insight-card .insight-title { font-size: 13.5px; font-weight: 700; margin-bottom: 5px; line-height: 1.4; }
+  .insight-card .insight-detail { font-size: 12px; color: #555; line-height: 1.6; margin-bottom: 9px; }
+  .insight-card .insight-detail strong { color: var(--accent); }
+  .insight-card .data-pointer { font-size: 11px; color: #888; display: flex; align-items: center; gap: 4px; }
+  .insight-card .data-pointer .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .insight-card[data-color="amber"] { --accent: #f59e0b; }
+  .insight-card[data-color="red"] { --accent: #dc2626; }
+  .insight-card[data-color="purple"] { --accent: #8b5cf6; }
+
+  .insight-actions { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e3e8; display: none; }
+  .insight-card.active .insight-actions { display: block; }
+  .insight-actions .action-label { font-size: 11px; color: #666; margin-bottom: 5px; font-weight: 600; }
+  .action-row { font-size: 12px; color: #333; margin-bottom: 4px; line-height: 1.5; }
+  .action-row::before { content: "→ "; color: var(--accent); font-weight: 700; }
+  .insight-actions .links { margin-top: 9px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .insight-actions .link-btn { background: var(--accent); color: white; border: none; padding: 6px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .insight-actions .link-btn.outline { background: white; color: var(--accent); border: 1px solid var(--accent); }
+
+  .demo-hint { position: fixed; bottom: 16px; right: 16px; background: #1a1a1a; color: white; padding: 9px 14px; border-radius: 8px; font-size: 11px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+</style>
+</head>
+<body>
+
+<div class="global-header">
+  <div class="breadcrumb">
+    Partner Office <span class="sep">›</span> 인사이트 <span class="sep">›</span> 리포트 <span class="sep">›</span> <span class="current">C1. 퍼널 이탈 진단</span>
+  </div>
+  <div class="header-actions">
+    <span class="tier-badge">무신사 스탠다드 · Basic 요금제</span>
+    <button class="btn">📥 CSV 다운로드</button>
+    <button class="btn primary">⟳ 분석 다시 실행</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span style="color: #888; font-size: 11px;">필터</span>
+  <div class="filter">기간: <strong>2026-04-23 ~ 2026-05-22 (최근 30일)</strong></div>
+  <div class="filter">브랜드: <strong>무신사 스탠다드</strong></div>
+  <div class="filter">집계 단위: <strong>카테고리 + 시간대</strong></div>
+  <div style="margin-left: auto; color: #888; font-size: 11px;">출처: 자사 노출·클릭·구매 로그 (peer 비교 = 동일 카테고리 4개 브랜드 평균)</div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" data-view="cat" onclick="switchView('cat')">카테고리별 퍼널 <span class="tab-count">12</span></div>
+  <div class="tab" data-view="hour" onclick="switchView('hour')">시간대별 퍼널 <span class="tab-count">24</span></div>
+</div>
+
+<main>
+  <div class="data-panel">
+    <div class="data-view active" id="view-cat">
+      <table class="data-grid">
+        <thead>
+          <tr>
+            <th>카테고리</th>
+            <th class="num">총 노출</th>
+            <th class="num">이탈 노출</th>
+            <th class="num">장바구니</th>
+            <th class="num">바로구매</th>
+            <th class="num">총 클릭</th>
+            <th class="num">총 구매</th>
+            <th class="num">이탈률</th>
+            <th class="num">CTR</th>
+            <th class="num">CVR(노출)</th>
+            <th class="num">장바구니→구매</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-cat"></tbody>
+      </table>
+    </div>
+    <div class="data-view" id="view-hour">
+      <table class="data-grid">
+        <thead>
+          <tr>
+            <th>시간대</th>
+            <th class="num">총 노출</th>
+            <th class="num">이탈 노출</th>
+            <th class="num">장바구니</th>
+            <th class="num">바로구매</th>
+            <th class="num">총 클릭</th>
+            <th class="num">총 구매</th>
+            <th class="num">이탈률</th>
+            <th class="num">CTR</th>
+            <th class="num">CVR(노출)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-hour"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <aside class="ai-panel">
+    <div class="ai-header">
+      <div class="icon">✨</div>
+      <h2>AI 분석</h2>
+      <span class="badge">자동 생성</span>
+    </div>
+
+    <div class="funnel-overview">
+      <div class="label">자사 전체 퍼널 (최근 30일)</div>
+      <div class="funnel-row">
+        <div class="stage">노출</div>
+        <div class="bar"><div class="bar-fill" style="width: 100%;"></div></div>
+        <div class="val">12,581,899</div>
+      </div>
+      <div class="funnel-row">
+        <div class="stage">클릭</div>
+        <div class="bar"><div class="bar-fill" style="width: 7.4%;"></div></div>
+        <div class="val">929,844 <span class="pct">7.4%</span></div>
+      </div>
+      <div class="funnel-row">
+        <div class="stage">구매</div>
+        <div class="bar"><div class="bar-fill" style="width: 2.6%;"></div></div>
+        <div class="val">333,415 <span class="pct">2.6%</span></div>
+      </div>
+    </div>
+
+    <div class="ai-summary">
+      <p>전체 노출의 <strong>92.6%가 이탈</strong>. peer 대비 모든 카테고리 우위지만, 자사 내부 격차가 큼: <strong>Bag·Shoes·Jewelry</strong>가 CTR·결제 전환 모두 최하위. 시간대로는 <strong>0시 이탈률 95.6%</strong> 단일 최고, <strong>20~22시</strong> 구매 골든타임.</p>
+    </div>
+
+    <div class="insights-list">
+      <div class="section-label">🔍 핵심 인사이트 (3건)</div>
+
+      <div class="insight-card" data-id="1" data-color="amber" data-tab="cat"
+           onmouseenter="hoverInsight(1)" onmouseleave="leaveInsight(1)" onclick="clickInsight(1)">
+        <div class="uc-label">UC 1</div>
+        <span class="insight-tag">카테고리 진입력 <span class="tab-link">카테고리별 탭</span></span>
+        <div class="insight-title">Bag·Shoes·Jewelry CTR 5%대 — peer 우위지만 자사 내부 격차 큼</div>
+        <div class="insight-detail">
+          자사 Clothing CTR <strong>6.9%</strong> (peer 평균 4.84% 대비 +2.06%p 우위). 그러나 Bag <strong>5.71%</strong>, Shoes <strong>5.38%</strong>, Jewelry <strong>5.08%</strong>는 자사 핵심 Underwear(16.62%)의 약 1/3. peer 대비는 우위지만 자사 내부에서는 진입 매력이 약함 (노출은 되는데 클릭이 부족).
+        </div>
+        <div class="data-pointer"><span class="dot"></span>대상: Shoes·Bag·Jewelry 3개 행 · "CTR" 컬럼</div>
+        <div class="insight-actions">
+          <div class="action-label">권장 액션</div>
+          <div class="action-row">3개 카테고리 상위 SKU 썸네일 신규 컷 2종 업로드 후 A/B 비교</div>
+          <div class="action-row">타이틀에 카테고리 상위 키워드 3개 추가</div>
+          <div class="action-row">첫 이미지를 모델 착장 컷으로 교체</div>
+          <div class="links">
+            <button class="link-btn">→ PO 상품 정보 수정</button>
+            <button class="link-btn outline">→ A/B 테스트 도구</button>
+            <button class="link-btn outline">→ AI Studio (이미지 생성)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card" data-id="2" data-color="red" data-tab="cat"
+           onmouseenter="hoverInsight(2)" onmouseleave="leaveInsight(2)" onclick="clickInsight(2)">
+        <div class="uc-label">UC 2</div>
+        <span class="insight-tag">결제 단계 마찰 <span class="tab-link">카테고리별 탭</span></span>
+        <div class="insight-title">Bag 장바구니→구매 26.9% — 카테고리 중 최하위</div>
+        <div class="insight-detail">
+          자사 장바구니 담은 후 실제 구매 전환율이 카테고리별 <strong>26.9%(Bag)~49.6%(Beauty)</strong>. 메이저 카테고리 중 Bag <strong>26.9%</strong>, Shoes <strong>29.6%</strong>, Jewelry <strong>30.0%</strong>가 최하위 3개. 장바구니까지 갔는데 결제에서 막힘 — 가격·배송비·재고·쿠폰 조건 점검 필요.
+        </div>
+        <div class="data-pointer"><span class="dot"></span>대상: Shoes·Bag·Jewelry 3개 행 · "장바구니→구매" 컬럼</div>
+        <div class="insight-actions">
+          <div class="action-label">권장 액션</div>
+          <div class="action-row">장바구니 이탈 24시간 타겟 광고 캠페인 등록</div>
+          <div class="action-row">결제 직전 추가 쿠폰 1매 발행</div>
+          <div class="action-row">배송비·재고·할인 코드 PO에서 재확인</div>
+          <div class="links">
+            <button class="link-btn">→ 광고 시스템 (리타게팅)</button>
+            <button class="link-btn outline">→ PO 쿠폰 (결제 트리거)</button>
+            <button class="link-btn outline">→ PO 옵션·할인 관리</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card" data-id="3" data-color="purple" data-tab="hour"
+           onmouseenter="hoverInsight(3)" onmouseleave="leaveInsight(3)" onclick="clickInsight(3)">
+        <div class="uc-label">UC 3</div>
+        <span class="insight-tag">시간대 의사결정 <span class="tab-link">시간대별 탭</span></span>
+        <div class="insight-title">0시 이탈률 95.6% + 20~22시 구매 골든타임 — 시간대별 의도 다름</div>
+        <div class="insight-detail">
+          자정 0시 이탈률 <strong>95.6%</strong>로 단일 시간대 최고 (자사 평균 92.6% 대비 +3.0%p). 그 시간대 사용자는 검색·구경 중심으로 구매 의도 낮음. 반면 <strong>20~22시는 구매 골든타임</strong>으로 일 구매의 약 32%가 집중 (20시 21.9K + 21시 23.5K + 22시 22.5K). 같은 노출이라도 시간대별 의도 명확히 다름.
+        </div>
+        <div class="data-pointer"><span class="dot"></span>대상: 0시·20시·21시·22시 4개 행 · "총 구매" 컬럼</div>
+        <div class="insight-actions">
+          <div class="action-label">권장 액션</div>
+          <div class="action-row">야간 한정 쿠폰(20~22시) 자동 발행 등록</div>
+          <div class="action-row">광고 시간대 노출 비중 20~22시 +30% / 새벽(23~02시) -50% 조정</div>
+          <div class="action-row">21시 직전(20:30~21:00) CRM 푸시 발송</div>
+          <div class="links">
+            <button class="link-btn">→ PO 쿠폰 (시간대 한정)</button>
+            <button class="link-btn outline">→ 광고 시스템 (Day-parting)</button>
+            <button class="link-btn outline">→ 브랜드 CRM 푸시</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="demo-hint">
+  💡 인사이트 카드 호버/클릭 → 좌측 데이터 하이라이트 · 카드 클릭 시 해당 탭 자동 전환
+</div>
+
+<script>
+const catData = [
+  { cat: 'Clothing',       imp: 10810436, exit: 10064528, cart_imp: 720656, cart_pur: 244236, buy_imp: 25252, buy_pur: 13278, click: 745908, pur: 257514, bounce: 93.1, ctr: 6.90, cvr_imp: 2.38, cvr_click: 34.5 },
+  { cat: 'Accessory',      imp: 538490,   exit: 483437,   cart_imp: 52952,  cart_pur: 21192,  buy_imp: 2101,  buy_pur: 1460,  click: 55053,  pur: 22652,  bounce: 89.8, ctr: 10.22, cvr_imp: 4.21, cvr_click: 41.1 },
+  { cat: 'Shoes',          imp: 291179,   exit: 275527,   cart_imp: 14715,  cart_pur: 4362,   buy_imp: 937,   buy_pur: 444,   click: 15652,  pur: 4806,   bounce: 94.6, ctr: 5.38, cvr_imp: 1.65, cvr_click: 30.7 },
+  { cat: 'Underwear',      imp: 267216,   exit: 222813,   cart_imp: 42829,  cart_pur: 21172,  buy_imp: 1574,  buy_pur: 1142,  click: 44403,  pur: 22314,  bounce: 83.4, ctr: 16.62, cvr_imp: 8.35, cvr_click: 50.3 },
+  { cat: 'Socks/Legwear',  imp: 248002,   exit: 206875,   cart_imp: 39795,  cart_pur: 16221,  buy_imp: 1332,  buy_pur: 961,   click: 41127,  pur: 17182,  bounce: 83.4, ctr: 16.58, cvr_imp: 6.93, cvr_click: 41.8 },
+  { cat: 'Bag',            imp: 236866,   exit: 223330,   cart_imp: 13055,  cart_pur: 3511,   buy_imp: 481,   buy_pur: 336,   click: 13536,  pur: 3847,   bounce: 94.3, ctr: 5.71, cvr_imp: 1.62, cvr_click: 28.4 },
+  { cat: 'Headwear',       imp: 112602,   exit: 104142,   cart_imp: 8125,   cart_pur: 2653,   buy_imp: 335,   buy_pur: 245,   click: 8460,   pur: 2898,   bounce: 92.5, ctr: 7.51, cvr_imp: 2.57, cvr_click: 34.3 },
+  { cat: 'Jewelry',        imp: 54108,    exit: 51361,    cart_imp: 2655,   cart_pur: 796,    buy_imp: 92,    buy_pur: 76,    click: 2747,   pur: 872,    bounce: 94.9, ctr: 5.08, cvr_imp: 1.61, cvr_click: 31.7 },
+  { cat: 'Sports/Goods',   imp: 10907,    exit: 9884,     cart_imp: 981,    cart_pur: 430,    buy_imp: 42,    buy_pur: 28,    click: 1023,   pur: 458,    bounce: 90.6, ctr: 9.38, cvr_imp: 4.20, cvr_click: 44.8 },
+  { cat: 'Life',           imp: 9984,     exit: 8317,     cart_imp: 1649,   cart_pur: 721,    buy_imp: 18,    buy_pur: 18,    click: 1667,   pur: 739,    bounce: 83.3, ctr: 16.70, cvr_imp: 7.40, cvr_click: 44.3 },
+  { cat: 'Sportswear',     imp: 1252,     exit: 1109,     cart_imp: 143,    cart_pur: 69,     buy_imp: 0,     buy_pur: 0,     click: 143,    pur: 69,     bounce: 88.6, ctr: 11.42, cvr_imp: 5.51, cvr_click: 48.3 },
+  { cat: 'Beauty',         imp: 857,      exit: 732,      cart_imp: 121,    cart_pur: 60,     buy_imp: 4,     buy_pur: 4,     click: 125,    pur: 64,     bounce: 85.4, ctr: 14.59, cvr_imp: 7.47, cvr_click: 49.6 }
+];
+
+const hourData = [
+  { hour: 0,  imp: 788309, exit: 753381, cart_imp: 24250, cart_pur: 8104, buy_imp: 774,  buy_pur: 425,  click: 25024, pur: 8529, bounce: 95.6, ctr: 3.17, cvr_imp: 1.08 },
+  { hour: 1,  imp: 592926, exit: 551987, cart_imp: 39344, cart_pur: 13322, buy_imp: 1595, buy_pur: 824, click: 40939, pur: 14146, bounce: 93.1, ctr: 6.91, cvr_imp: 2.39 },
+  { hour: 2,  imp: 370771, exit: 345747, cart_imp: 24250, cart_pur: 8104, buy_imp: 774,  buy_pur: 425, click: 25024, pur: 8529, bounce: 93.3, ctr: 6.75, cvr_imp: 2.30 },
+  { hour: 3,  imp: 246851, exit: 230156, cart_imp: 16204, cart_pur: 5414, buy_imp: 491,  buy_pur: 277, click: 16695, pur: 5691, bounce: 93.2, ctr: 6.76, cvr_imp: 2.31 },
+  { hour: 4,  imp: 167719, exit: 156333, cart_imp: 10970, cart_pur: 3480, buy_imp: 416,  buy_pur: 188, click: 11386, pur: 3668, bounce: 93.2, ctr: 6.79, cvr_imp: 2.19 },
+  { hour: 5,  imp: 134456, exit: 125778, cart_imp: 8390,  cart_pur: 2739, buy_imp: 288,  buy_pur: 153, click: 8678,  pur: 2892, bounce: 93.5, ctr: 6.45, cvr_imp: 2.15 },
+  { hour: 6,  imp: 153589, exit: 143090, cart_imp: 10176, cart_pur: 3550, buy_imp: 323,  buy_pur: 160, click: 10499, pur: 3710, bounce: 93.2, ctr: 6.84, cvr_imp: 2.42 },
+  { hour: 7,  imp: 220718, exit: 204860, cart_imp: 15246, cart_pur: 5246, buy_imp: 612,  buy_pur: 379, click: 15858, pur: 5625, bounce: 92.8, ctr: 7.19, cvr_imp: 2.55 },
+  { hour: 8,  imp: 319517, exit: 295396, cart_imp: 23181, cart_pur: 8360, buy_imp: 940,  buy_pur: 579, click: 24121, pur: 8939, bounce: 92.5, ctr: 7.55, cvr_imp: 2.80 },
+  { hour: 9,  imp: 383831, exit: 353986, cart_imp: 28603, cart_pur: 10494, buy_imp: 1242, buy_pur: 730, click: 29845, pur: 11224, bounce: 92.2, ctr: 7.77, cvr_imp: 2.92 },
+  { hour: 10, imp: 457197, exit: 422324, cart_imp: 33578, cart_pur: 12386, buy_imp: 1295, buy_pur: 755, click: 34873, pur: 13141, bounce: 92.4, ctr: 7.63, cvr_imp: 2.87 },
+  { hour: 11, imp: 526999, exit: 486912, cart_imp: 38519, cart_pur: 13839, buy_imp: 1568, buy_pur: 831, click: 40087, pur: 14670, bounce: 92.4, ctr: 7.61, cvr_imp: 2.78 },
+  { hour: 12, imp: 516225, exit: 476550, cart_imp: 38164, cart_pur: 14352, buy_imp: 1511, buy_pur: 885, click: 39675, pur: 15237, bounce: 92.3, ctr: 7.69, cvr_imp: 2.95 },
+  { hour: 13, imp: 513615, exit: 473912, cart_imp: 38313, cart_pur: 14749, buy_imp: 1390, buy_pur: 730, click: 39703, pur: 15479, bounce: 92.3, ctr: 7.73, cvr_imp: 3.01 },
+  { hour: 14, imp: 573055, exit: 528769, cart_imp: 42648, cart_pur: 15681, buy_imp: 1638, buy_pur: 860, click: 44286, pur: 16541, bounce: 92.3, ctr: 7.73, cvr_imp: 2.89 },
+  { hour: 15, imp: 598612, exit: 551842, cart_imp: 45058, cart_pur: 16577, buy_imp: 1712, buy_pur: 959, click: 46770, pur: 17536, bounce: 92.2, ctr: 7.81, cvr_imp: 2.93 },
+  { hour: 16, imp: 600667, exit: 553173, cart_imp: 45841, cart_pur: 17195, buy_imp: 1653, buy_pur: 1020, click: 47494, pur: 18215, bounce: 92.1, ctr: 7.91, cvr_imp: 3.03 },
+  { hour: 17, imp: 615928, exit: 567973, cart_imp: 46276, cart_pur: 17022, buy_imp: 1679, buy_pur: 967, click: 47955, pur: 17989, bounce: 92.2, ctr: 7.79, cvr_imp: 2.92 },
+  { hour: 18, imp: 593752, exit: 548269, cart_imp: 43867, cart_pur: 16047, buy_imp: 1616, buy_pur: 928, click: 45483, pur: 16975, bounce: 92.3, ctr: 7.66, cvr_imp: 2.86 },
+  { hour: 19, imp: 659097, exit: 608951, cart_imp: 48460, cart_pur: 18075, buy_imp: 1686, buy_pur: 915, click: 50146, pur: 18990, bounce: 92.4, ctr: 7.61, cvr_imp: 2.88 },
+  { hour: 20, imp: 792260, exit: 732988, cart_imp: 57390, cart_pur: 20840, buy_imp: 1882, buy_pur: 1099, click: 59272, pur: 21939, bounce: 92.5, ctr: 7.48, cvr_imp: 2.77 },
+  { hour: 21, imp: 873866, exit: 809828, cart_imp: 61977, cart_pur: 22345, buy_imp: 2061, buy_pur: 1176, click: 64038, pur: 23521, bounce: 92.7, ctr: 7.33, cvr_imp: 2.69 },
+  { hour: 22, imp: 944851, exit: 877277, cart_imp: 65564, cart_pur: 21363, buy_imp: 2010, buy_pur: 1128, click: 67574, pur: 22491, bounce: 92.8, ctr: 7.15, cvr_imp: 2.38 },
+  { hour: 23, imp: 937088, exit: 873173, cart_imp: 62074, cart_pur: 15158, buy_imp: 1841, buy_pur: 981, click: 63915, pur: 16139, bounce: 93.2, ctr: 6.82, cvr_imp: 1.72 }
+];
+
+// UC1: Bag·Shoes·Jewelry CTR 5% (rows: Shoes=2, Bag=5, Jewelry=7) → focus CTR
+// UC2: 장바구니→구매 최하위 (same rows) → focus cvr_click
+// UC3: 0시 + 20-22시 → focus pur
+const insights = {
+  1: { tab: 'cat',  color: 'amber',  rows: [2, 5, 7],   focus: 'ctr' },
+  2: { tab: 'cat',  color: 'red',    rows: [2, 5, 7],   focus: 'cvr_click' },
+  3: { tab: 'hour', color: 'purple', rows: [0, 20, 21, 22], focus: 'pur' }
+};
+
+const colMap_cat  = { cat: 0, imp: 1, exit: 2, cart: 3, buy: 4, click: 5, pur: 6, bounce: 7, ctr: 8, cvr_imp: 9, cvr_click: 10 };
+const colMap_hour = { hour: 0, imp: 1, exit: 2, cart: 3, buy: 4, click: 5, pur: 6, bounce: 7, ctr: 8, cvr_imp: 9 };
+
+function renderCat() {
+  const tbody = document.getElementById('tbody-cat');
+  tbody.innerHTML = catData.map((d, i) => {
+    return `<tr data-row="${i}" data-tab="cat">
+      <td class="label">${d.cat}</td>
+      <td class="num">${d.imp.toLocaleString()}</td>
+      <td class="num dim">${d.exit.toLocaleString()}</td>
+      <td class="num">${d.cart_imp.toLocaleString()} → ${d.cart_pur.toLocaleString()}</td>
+      <td class="num">${d.buy_imp.toLocaleString()} → ${d.buy_pur.toLocaleString()}</td>
+      <td class="num">${d.click.toLocaleString()}</td>
+      <td class="num">${d.pur.toLocaleString()}</td>
+      <td class="num ${d.bounce >= 94 ? 'bad' : (d.bounce <= 85 ? 'good' : '')}">${d.bounce.toFixed(1)}%</td>
+      <td class="num ${d.ctr >= 15 ? 'good' : (d.ctr < 6 ? 'bad' : '')}">${d.ctr.toFixed(2)}%</td>
+      <td class="num ${d.cvr_imp >= 7 ? 'good' : ''}">${d.cvr_imp.toFixed(2)}%</td>
+      <td class="num ${d.cvr_click < 32 ? 'bad' : (d.cvr_click >= 48 ? 'good' : '')}">${d.cvr_click.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHour() {
+  const tbody = document.getElementById('tbody-hour');
+  tbody.innerHTML = hourData.map((d, i) => {
+    return `<tr data-row="${d.hour}" data-tab="hour">
+      <td class="label">${d.hour.toString().padStart(2,'0')}시</td>
+      <td class="num">${d.imp.toLocaleString()}</td>
+      <td class="num dim">${d.exit.toLocaleString()}</td>
+      <td class="num">${d.cart_imp.toLocaleString()} → ${d.cart_pur.toLocaleString()}</td>
+      <td class="num">${d.buy_imp.toLocaleString()} → ${d.buy_pur.toLocaleString()}</td>
+      <td class="num">${d.click.toLocaleString()}</td>
+      <td class="num">${d.pur.toLocaleString()}</td>
+      <td class="num ${d.bounce >= 95 ? 'bad' : ''}">${d.bounce.toFixed(1)}%</td>
+      <td class="num">${d.ctr.toFixed(2)}%</td>
+      <td class="num">${d.cvr_imp.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchView(view) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.querySelectorAll('.data-view').forEach(v => v.classList.toggle('active', v.id === `view-${view}`));
+}
+
+let activeInsight = null;
+
+function applyHighlight(id, isLock=false) {
+  clearHighlightDom();
+  if (!id) return;
+  const def = insights[id];
+  const focusColIdx = def.tab === 'cat' ? colMap_cat[def.focus] : colMap_hour[def.focus];
+  def.rows.forEach(rowVal => {
+    const sel = def.tab === 'cat' ? `tr[data-row="${rowVal}"][data-tab="cat"]` : `tr[data-row="${rowVal}"][data-tab="hour"]`;
+    const tr = document.querySelector(sel);
+    if (!tr) return;
+    tr.setAttribute('data-highlight', def.color);
+    if (focusColIdx !== undefined) {
+      const td = tr.children[focusColIdx];
+      if (td) td.classList.add('cell-focus');
+    }
+  });
+  if (isLock && def.rows.length > 0) {
+    const firstSel = def.tab === 'cat' ? `tr[data-row="${def.rows[0]}"][data-tab="cat"]` : `tr[data-row="${def.rows[0]}"][data-tab="hour"]`;
+    const firstTr = document.querySelector(firstSel);
+    if (firstTr) firstTr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function clearHighlightDom() {
+  document.querySelectorAll('tr[data-highlight]').forEach(tr => tr.removeAttribute('data-highlight'));
+  document.querySelectorAll('td.cell-focus').forEach(td => td.classList.remove('cell-focus'));
+}
+
+function hoverInsight(id) {
+  if (activeInsight) return;
+  const def = insights[id];
+  switchView(def.tab);
+  applyHighlight(id, false);
+}
+
+function leaveInsight(id) {
+  if (activeInsight) return;
+  clearHighlightDom();
+}
+
+function clickInsight(id) {
+  document.querySelectorAll('.insight-card').forEach(c => c.classList.remove('active'));
+  if (activeInsight === id) {
+    activeInsight = null;
+    clearHighlightDom();
+  } else {
+    activeInsight = id;
+    document.querySelector(`.insight-card[data-id="${id}"]`).classList.add('active');
+    const def = insights[id];
+    switchView(def.tab);
+    applyHighlight(id, true);
+  }
+}
+
+renderCat();
+renderHour();
+</script>
+</body>
+</html>
