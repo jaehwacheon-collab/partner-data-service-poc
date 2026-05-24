@@ -221,20 +221,19 @@
            onmouseenter="hoverInsight(2)" onmouseleave="leaveInsight(2)" onclick="clickInsight(2)">
         <div class="uc-label">UC 2</div>
         <span class="insight-tag">환불률 이상 <span class="count">375 SKU</span></span>
-        <div class="insight-title">환불률 카테고리 평균의 1.5배 이상 — 사이즈·품질 불일치 가능</div>
+        <div class="insight-title">환불률 카테고리 평균의 1.5배 이상 — 환불 사유 분석 필요</div>
         <div class="insight-detail">
-          자사 SKU 중 <strong>375개</strong>의 환불률이 동일 카테고리 평균의 1.5배 이상. 사이즈 가이드·상세 이미지·소재 표현 점검 필요.
+          자사 SKU 중 <strong>375개</strong>의 환불률이 동일 카테고리 평균의 1.5배 이상. <strong>사유 가설</strong>: 사이즈·품질·상세 정보 불일치 (현재 데이터로 사유 확정 불가). AI 후기 인사이트로 환불 관련 부정 키워드를 추출해 사유를 식별한 뒤 사유별 액션으로 분기 필요.
         </div>
         <div class="data-pointer"><span class="dot"></span>대상: 375개 행 · "환불률" 컬럼</div>
         <div class="insight-actions">
-          <div class="action-label">권장 액션</div>
-          <div class="action-row">환불률 상위 20개 SKU 사이즈 표 재측정 후 PO 업데이트</div>
-          <div class="action-row">상세 이미지 자연광·실착 컷 교체, 사이즈 추천 가이드 블록 추가</div>
-          <div class="action-row">사이즈 관련 후기 우선 노출 설정</div>
+          <div class="action-label">권장 액션 (2단계)</div>
+          <div class="action-row"><strong>1단계 사유 확정</strong>: AI 후기 인사이트로 환불 관련 부정 키워드 추출 (사이즈/품질/배송/디자인 등 분류)</div>
+          <div class="action-row"><strong>2단계 사유별 분기</strong>: 사이즈 → 사이즈 표 재측정 + 추천 가이드 블록 추가 / 품질 → 최근 출고 로트 점검 + CS 대응 / 상세 불일치 → 이미지 자연광·실착 컷 교체, 컬러·소재 표현 보강</div>
           <div class="links">
-            <button class="link-btn">→ PO 상품 정보 수정</button>
+            <button class="link-btn">→ AI 후기 인사이트 (1단계)</button>
+            <button class="link-btn outline">→ PO 상품 정보 수정 (2단계)</button>
             <button class="link-btn outline">→ AI Studio (이미지 보정)</button>
-            <button class="link-btn outline">→ AI 후기 인사이트</button>
           </div>
         </div>
       </div>
