@@ -11,19 +11,12 @@
   .intro { color: #666; margin-bottom: 24px; font-size: 14px; }
 
   /* Overlap analysis */
-  .overlap-card { background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1.5px solid #fdba74; border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; }
-  .overlap-card h2 { font-size: 15px; margin-bottom: 8px; color: #9a3412; }
-  .overlap-table { width: 100%; margin-top: 10px; font-size: 12px; }
-  .overlap-table th { background: rgba(255,255,255,0.5); padding: 6px 8px; text-align: left; font-weight: 700; color: #9a3412; }
-  .overlap-table td { padding: 6px 8px; background: white; border-bottom: 1px solid #fed7aa; }
-  .overlap-table .merge-tag { display: inline-block; background: #ea580c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 6px; }
 
   /* Item card */
   .item { background: white; border-radius: 14px; padding: 24px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
   .item-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
   .item-num { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #ec4899, #be185d); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
   .item-title { font-size: 16px; font-weight: 700; }
-  .item-merge { background: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 8px; }
   .item-desc { color: #555; font-size: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f2f5; }
 
   table.data { width: 100%; border-collapse: collapse; font-size: 12px; background: #fafbfc; border-radius: 6px; overflow: hidden; }
@@ -108,73 +101,18 @@
   .footnote { font-size: 11px; color: #888; padding: 8px 0; font-style: italic; margin-top: 8px; }
 
   /* Summary suggestion */
-  .merge-suggestion { background: #f5f3ff; border: 1.5px solid #c4b5fd; border-radius: 12px; padding: 22px; margin-top: 24px; }
-  .merge-suggestion h2 { font-size: 16px; color: #5b21b6; margin-bottom: 12px; }
-  .merge-suggestion .merge-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #ddd6fe; }
-  .merge-suggestion .merge-row:last-child { border-bottom: none; }
-  .merge-from { font-size: 12px; }
-  .merge-arrow { color: #8b5cf6; font-weight: 700; }
-  .merge-to { font-size: 12px; font-weight: 700; color: #5b21b6; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>경쟁사·시장 비교 6개 기능 목업</h1>
-  <p class="intro">현재 검토 중인 6개 sub-feature 시각 목업 + 중복·통폐합 안</p>
-
-  <!-- Overlap analysis -->
-  <div class="overlap-card">
-    <h2>⚠️ 중복 분석 결과</h2>
-    <table class="overlap-table">
-      <thead><tr><th style="width:25%">통합 후보 묶음</th><th>이유</th></tr></thead>
-      <tbody>
-        <tr>
-          <td><strong>#3 + #4</strong><span class="merge-tag">통합 권장</span></td>
-          <td>둘 다 "고객이 우리 외 어디로 가나" 추적. #4는 검색(노출 단계), #3은 구매(전환 단계). 같은 스토리의 다른 단계라 한 화면에 묶을 수 있음</td>
-        </tr>
-        <tr>
-          <td><strong>#1 + #6</strong><span class="merge-tag">흡수 가능</span></td>
-          <td>#6 랭킹은 #1 종합 점수판의 핵심 지표 1개로 흡수 가능. #1에 "카테고리 랭킹" 행을 추가하면 #6은 별도 페이지 없이 처리됨</td>
-        </tr>
-        <tr>
-          <td><strong>#2, #5</strong><span style="background:#10b981;color:white;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px;">독립 유지</span></td>
-          <td>#2 가격구간 분석, #5 교차구매 매트릭스는 각각 독립적 의사결정 (가격/번들). 다른 기능과 결합 어려움</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- 1. 종합 벤치마킹 -->
-  <div class="item">
-    <div class="item-header">
-      <div class="item-num">1</div>
-      <div class="item-title">카테고리/시장 평균 대비 자사 성과 벤치마킹</div>
-      <span class="item-merge">#6 흡수 가능</span>
-    </div>
-    <div class="item-desc">자사 다중 지표를 카테고리 평균 + peer 평균 + 카테고리 랭킹과 한눈에 비교</div>
-
-    <table class="data">
-      <thead>
-        <tr><th>지표</th><th class="num">자사</th><th class="num">카테고리 평균</th><th class="num">peer 평균 (5)</th><th class="num">카테고리 랭킹</th><th>vs 평균</th></tr>
-      </thead>
-      <tbody>
-        <tr><td class="label">월 매출</td><td class="num">5,420만</td><td class="num">3,200만</td><td class="num">4,800만</td><td class="num">#12 / 187</td><td><span class="badge-up">+69%</span></td></tr>
-        <tr><td class="label">평균 객단가</td><td class="num">68,200원</td><td class="num">52,400원</td><td class="num">61,100원</td><td class="num">#28 / 187</td><td><span class="badge-up">+30%</span></td></tr>
-        <tr><td class="label">월 구매자 수</td><td class="num">2,890명</td><td class="num">2,140명</td><td class="num">2,760명</td><td class="num">#15 / 187</td><td><span class="badge-up">+35%</span></td></tr>
-        <tr><td class="label">재구매율</td><td class="num">14.2%</td><td class="num">18.6%</td><td class="num">21.4%</td><td class="num">#94 / 187</td><td><span class="badge-down">-24%</span></td></tr>
-        <tr><td class="label">결제 전환율</td><td class="num">2.8%</td><td class="num">2.5%</td><td class="num">3.1%</td><td class="num">#45 / 187</td><td><span class="badge-up">+12%</span></td></tr>
-        <tr><td class="label">환불률</td><td class="num">9.7%</td><td class="num">9.2%</td><td class="num">8.8%</td><td class="num">#102 / 187</td><td><span class="badge-down">+5%</span></td></tr>
-      </tbody>
-    </table>
-    <div class="footnote">→ #6 카테고리 랭킹이 이 표의 "카테고리 랭킹" 컬럼으로 흡수됨. 종합 점수판 메인 화면 역할</div>
-  </div>
+  <p class="intro">경쟁사·시장 비교 6개 sub-feature 시각 목업</p>
 
   <!-- 2. 가격구간별 분석 -->
   <div class="item">
     <div class="item-header">
       <div class="item-num">2</div>
       <div class="item-title">경쟁상품 가격구간별 가격 분산 및 판매 집중도</div>
-      <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:8px;">독립 유지</span>
     </div>
     <div class="item-desc">카테고리 내 가격대별 상품 수 분포 + 매출 집중 구간 식별 → 가격 의사결정용</div>
 
@@ -216,7 +154,6 @@
     <div class="item-header">
       <div class="item-num">3</div>
       <div class="item-title">경쟁상품으로의 트래픽 이탈 경로 및 대체 구매율</div>
-      <span class="item-merge">#4와 통합 권장</span>
     </div>
     <div class="item-desc">자사 상품 조회 후 어디로 가서 구매했는지 (구매 단계 이탈 추적)</div>
 
@@ -259,7 +196,6 @@
     <div class="item-header">
       <div class="item-num">4</div>
       <div class="item-title">플랫폼 내 타 브랜드/경쟁사 키워드 및 검색 점유율</div>
-      <span class="item-merge">#3과 통합 권장</span>
     </div>
     <div class="item-desc">키워드별 자사 vs 경쟁사 클릭/구매 점유율 (탐색 단계 점유)</div>
 
@@ -316,7 +252,6 @@
     <div class="item-header">
       <div class="item-num">5</div>
       <div class="item-title">타사 상품과의 동시 장바구니 담기(교차구매) 매트릭스</div>
-      <span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:8px;">독립 유지</span>
     </div>
     <div class="item-desc">자사 상품과 함께 담기는 타사 상품 매트릭스 (스타일믹스·번들·콜라보 의사결정)</div>
 
@@ -357,7 +292,6 @@
     <div class="item-header">
       <div class="item-num">6</div>
       <div class="item-title">카테고리 내 경쟁 스토어/브랜드 랭킹 분석</div>
-      <span class="item-merge">#1에 흡수 가능</span>
     </div>
     <div class="item-desc">카테고리 매출 랭킹 + 7일·30일 변동 추이</div>
 
@@ -375,34 +309,8 @@
       <div class="rank-row"><div class="rank-num">#4</div><div class="rank-name">C브랜드</div><div style="text-align:right">#2</div><div style="text-align:right">#3</div><div class="rank-change rank-down">▼1</div></div>
       <div class="rank-row"><div class="rank-num">#5</div><div class="rank-name">D브랜드</div><div style="text-align:right">#4</div><div style="text-align:right">#4</div><div class="rank-change rank-down">▼1</div></div>
     </div>
-    <div class="footnote">→ 자사 30일 전 #7 → 현재 #3 (4단계 급상승). 이 데이터는 #1 표의 "카테고리 랭킹" 컬럼으로 흡수 가능</div>
+    <div class="footnote">→ 자사 30일 전 #7 → 현재 #3 (4단계 급상승)</div>
   </div>
-
-  <!-- Merge suggestion -->
-  <div class="merge-suggestion">
-    <h2>🔀 통폐합 권장안: 6개 → 4개</h2>
-    <div class="merge-row">
-      <div class="merge-from">#1 카테고리/시장 평균 대비 벤치마킹 + #6 카테고리 랭킹</div>
-      <div class="merge-arrow">⇒</div>
-      <div class="merge-to">종합 벤치마킹 대시보드 (랭킹 컬럼 포함)</div>
-    </div>
-    <div class="merge-row">
-      <div class="merge-from">#3 트래픽 이탈·대체 구매 + #4 키워드 점유</div>
-      <div class="merge-arrow">⇒</div>
-      <div class="merge-to">고객 이탈 추적 (탐색→구매 단계별)</div>
-    </div>
-    <div class="merge-row">
-      <div class="merge-from">#2 가격구간 분석</div>
-      <div class="merge-arrow">⇒</div>
-      <div class="merge-to">독립 유지</div>
-    </div>
-    <div class="merge-row">
-      <div class="merge-from">#5 교차구매 매트릭스</div>
-      <div class="merge-arrow">⇒</div>
-      <div class="merge-to">독립 유지</div>
-    </div>
-  </div>
-
 </div>
 </body>
 </html>
